@@ -42,6 +42,12 @@ export class Preloader extends Scene
         this.load.image('stage4', 'stage 4.png');
         this.load.image('stage5', 'stage 5.png');
 
+        // game 1 assets
+        this.load.image('amp-item', 'game1/amp_item.png');
+        this.load.image('nut-item', 'game1/plug_item.png');
+        this.load.image('spark-item', 'game1/spark_item.png');
+        this.load.image('plug-item', 'game1/plug_item.png');
+        
         // Tải các background cho từng chặng
         this.load.image('bg1', 'bg1.jpg');
         this.load.image('bg2', 'bg2.jpg');
@@ -49,6 +55,28 @@ export class Preloader extends Scene
         this.load.image('bg4', 'bg4.jpg');
         this.load.image('bg5', 'bg5.jpg');
 
+        // Load audio assets from audio directory
+        this.load.setPath('audio');
+
+        // Load utility sounds
+        this.load.audio('click', 'utils/click.mp3');
+
+        // Load vocabulary word sounds
+        this.load.setPath('audio');
+        // game 1
+        this.load.audio('amp-word-audio', 'game1/words/amp.mp3');
+        this.load.audio('nut-word-audio', 'game1/words/nut.mp3');
+        this.load.audio('spark-word-audio', 'game1/words/spark.mp3');
+        this.load.audio('plug-word-audio', 'game1/words/plug.mp3');
+
+
+
+        // load utils sound
+        this.load.audio('click', 'utils/click.mp3');
+        this.load.audio('correct', 'utils/correct.mp3');
+        this.load.audio('wrong', 'utils/wrong.mp3');
+        this.load.audio('adventure-bg', 'utils/adventure_bg.mp3');
+        
         // Thêm sự kiện để kiểm tra khi tải xong
         this.load.on('complete', () => {
             console.log('Preloader: All assets loaded successfully');
