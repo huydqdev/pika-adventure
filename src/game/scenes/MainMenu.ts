@@ -46,15 +46,15 @@ export class MainMenu extends Scene
 
     // Stage descriptions
     stageDescriptions: string[] = [
-        "Robot Pika đã bị lạc trong khu rừng hoang dã của Trái Đất. Nhiệm vụ của bạn là thu thập công cụ để sửa chữa tàu vũ trụ và tìm kiếm tín hiệu liên lạc. Nhưng, bạn sẽ phải đối mặt với nhiều thử thách: con người, thời tiết khắc nghiệt và địa hình xa lạ. Hãy chuẩn bị cho một cuộc phiêu lưu đầy kịch tính!",
+        "Robot Pika lạc trong rừng Trái Đất. Thu thập công cụ sửa tàu vũ trụ và tìm tín hiệu liên lạc. Đối mặt với con người, thời tiết khắc nghiệt và địa hình lạ.",
 
-        "Pika tiếp tục hành trình qua vành đai thiên thạch. Nhiệm vụ lần này là thu thập các món đồ chứa từ vựng và phát âm đúng để khôi phục hệ thống tàu, tiến gần hơn đến cổng không gian ẩn. Chuẩn bị sẵn sàng!",
+        "Pika xuyên qua vành đai thiên thạch. Đánh bại quái vật để nạp năng lượng cho tàu và tiếp cận cổng không gian ẩn.",
 
-        "Pika hạ cánh trên hành tinh đỏ và cần thu thập năng lượng để phục hồi tàu. Tìm các món đồ chứa từ vựng mới và luyện phát âm để tiếp tục hành trình nào!",
+        "Pika hạ cánh trên hành tinh đỏ. Thu thập năng lượng phục hồi tàu qua các món đồ chứa từ vựng mới và luyện phát âm.",
 
-        "Pika đang khám phá một trạm không gian bỏ hoang và không ổn định. Để tìm tọa độ dẫn đến Final Stage, cậu phải thu thập các bộ phận quan trọng từ các mảnh vỡ của trạm và kích hoạt lại hệ thống. Mỗi món đồ bạn thu thập là một từ vựng với âm tiên tiến, giúp bạn luyện phát âm phức tạp. Quyết tâm để khôi phục hệ thống và tiến xa hơn trong hành trình nào!",
+        "Pika khám phá trạm không gian bị bỏ hoang. Thu thập bộ phận từ mảnh vỡ và kích hoạt lại hệ thống để tìm tọa độ Final Stage. Mỗi món đồ là từ vựng với âm tiên tiến.",
 
-        "Pika khám phá trạm không gian bỏ hoang để tìm tọa độ Final Stage. Thu thập các bộ phận từ mảnh vỡ, mỗi món đồ là một từ vựng phức tạp giúp luyện phát âm. Khôi phục hệ thống và tiến xa hơn trong hành trình!"
+        "Pika khám phá trạm không gian bỏ hoang. Thu thập bộ phận quan trọng chứa từ vựng phức tạp để khôi phục hệ thống và tìm đường đến đích."
     ];
 
     // Stage name text

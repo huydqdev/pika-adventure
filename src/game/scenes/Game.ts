@@ -411,7 +411,7 @@ export class Game extends Scene
         // Add title text
         const titleText = this.add.text(
             0, -popupHeight * 0.35,
-            'Welcome to the Game!',
+            'Chào mừng bạn đến với Trò chơi!',
             { fontSize: '32px', color: '#000000', fontStyle: 'bold' }
         );
         titleText.setOrigin(0.5);
@@ -420,7 +420,7 @@ export class Game extends Scene
         // Add content text
         const contentText = this.add.text(
             0, 0,
-            'This is an introduction to the game.\nFollow the path and explore the hub buttons.\n\nClick outside this popup to close it.',
+            'Đây là phần giới thiệu của trò chơi.\nHãy theo con đường và khám phá các nút chức năng.\n\nNhấn bên ngoài hộp thoại này để đóng lại.',
             { fontSize: '20px', color: '#000000', align: 'center' }
         );
         contentText.setOrigin(0.5);
@@ -587,7 +587,7 @@ export class Game extends Scene
         // Add feedback text area
         this.feedbackText = this.add.text(
             0, popupHeight * 0.15,
-            "Press the Speech button and pronounce the word.",
+            "Nhấn nút Nói và phát âm từ này.",
             { fontSize: '18px', color: '#0066cc', align: 'center', wordWrap: { width: popupWidth * 0.8 } }
         );
         this.feedbackText.setOrigin(0.5);
@@ -608,7 +608,7 @@ export class Game extends Scene
         // Add text to the speech button
         const buttonText = this.add.text(
             0, popupHeight * 0.3,
-            'Speech',
+            'Nói',
             { fontSize: '24px', color: '#ffffff' }
         );
         buttonText.setOrigin(0.5);
@@ -921,7 +921,7 @@ export class Game extends Scene
         // Add title text
         const titleText = this.add.text(
             0, -popupHeight * 0.4,
-            'Vocabulary Collections',
+            'Bộ Sưu Tập Từ Vựng',
             { fontSize: '32px', color: '#000000', fontStyle: 'bold' }
         );
         titleText.setOrigin(0.5);
@@ -931,7 +931,7 @@ export class Game extends Scene
         if (this.collectedItems.length === 0) {
             const noItemsText = this.add.text(
                 0, 0,
-                'No vocabulary words collected yet.\nExplore the path to collect words!',
+                'Chưa có từ vựng nào được thu thập.\nHãy khám phá con đường để thu thập các từ!',
                 { fontSize: '20px', color: '#000000', align: 'center' }
             );
             noItemsText.setOrigin(0.5);
@@ -1095,7 +1095,7 @@ export class Game extends Scene
         // Add title text
         const titleText = this.add.text(
             0, -popupHeight * 0.3,
-            'Congratulations!',
+            'Chúc mừng!',
             { fontSize: '32px', color: '#000000', fontStyle: 'bold' }
         );
         titleText.setOrigin(0.5);
@@ -1104,7 +1104,7 @@ export class Game extends Scene
         // Add content text
         const contentText = this.add.text(
             0, -popupHeight * 0.05,
-            'You have collected all vocabulary words along the path!\nThank you for playing the game.',
+            'Bạn đã thu thập tất cả các từ vựng trên đường đi!\nCảm ơn bạn đã chơi trò chơi.',
             { fontSize: '20px', color: '#000000', align: 'center' }
         );
         contentText.setOrigin(0.5);
@@ -1124,7 +1124,7 @@ export class Game extends Scene
         // Add text to the button
         const buttonText = this.add.text(
             0, popupHeight * 0.25,
-            'Continue',
+            'Tiếp tục',
             { fontSize: '24px', color: '#ffffff' }
         );
         buttonText.setOrigin(0.5);
@@ -1262,9 +1262,9 @@ export class Game extends Scene
         if (this.speechRecognition && !this.isSpeechListening) {
             this.speechRecognition.start();
             this.isSpeechListening = true;
-            this.updateFeedback('Listening... Say the word.');
+            this.updateFeedback('Đang lắng nghe... Hãy đọc từ này.');
         } else {
-            this.updateFeedback('Speech recognition not available. Try another browser.');
+            this.updateFeedback('Tính năng nhận diện giọng nói không khả dụng. Hãy thử trình duyệt khác.');
         }
     }
     
@@ -1289,7 +1289,7 @@ export class Game extends Scene
         
         if (isCorrect) {
             // Pronunciation is correct, collect item
-            this.updateFeedback('Excellent pronunciation! Collecting item...');
+            this.updateFeedback('Phát âm tuyệt vời! Đang thu thập vật phẩm...');
             
             if (!this.popup) return;
             
@@ -1305,9 +1305,9 @@ export class Game extends Scene
             });
         } else {
             // Incorrect pronunciation
-            if (this.attemptsCount >= 3) {
-                // After 3 attempts, automatically collect the item
-                this.updateFeedback("Let's move on. Collecting item anyway...");
+            if (this.attemptsCount >= 2) {
+                // After 2 attempts, automatically collect the item
+                this.updateFeedback("Hãy cùng tiếp tục. Vẫn thu thập vật phẩm...");
                 
                 if (!this.popup) return;
                 
@@ -1323,8 +1323,8 @@ export class Game extends Scene
                 });
             } else {
                 // Still have attempts left
-                const attemptsLeft = 3 - this.attemptsCount;
-                this.updateFeedback(`Not quite right. Try again! (${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} left)`);
+                const attemptsLeft = 2 - this.attemptsCount;
+                this.updateFeedback(`Chưa chính xác. Hãy thử lại! (còn ${attemptsLeft} lần ${attemptsLeft === 1 ? 'thử' : 'thử'})`);
                 
                 if (this.popup) {
                     const sprite = this.popup.getByName('itemSprite') as Phaser.GameObjects.Rectangle;
