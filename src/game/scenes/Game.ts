@@ -419,7 +419,7 @@ export class Game extends Scene
         const titleText = this.add.text(
             0, -popupHeight * 0.35,
             'Welcome to the Game!',
-            { fontSize: '32px', color: '#000000', fontStyle: 'bold' }
+            { fontSize: '44px', color: '#000000', fontStyle: 'bold' }
         );
         titleText.setOrigin(0.5);
         this.popup.add(titleText);
@@ -428,7 +428,7 @@ export class Game extends Scene
         const contentText = this.add.text(
             0, 0,
             'This is an introduction to the game.\nFollow the path and explore the hub buttons.\n\nClick outside this popup to close it.',
-            { fontSize: '20px', color: '#000000', align: 'center' }
+            { fontSize: '30px', color: '#000000', align: 'center' }
         );
         contentText.setOrigin(0.5);
         this.popup.add(contentText);
@@ -549,7 +549,7 @@ export class Game extends Scene
         const titleText = this.add.text(
             0, -popupHeight * 0.4,
             vocabItem.word,
-            { fontSize: '32px', color: '#000000', fontStyle: 'bold' }
+            { fontSize: '44px', color: '#000000', fontStyle: 'bold' }
         );
         titleText.setOrigin(0.5);
         this.popup.add(titleText);
@@ -571,7 +571,7 @@ export class Game extends Scene
         const wordText = this.add.text(
             0, -popupHeight * 0.15 + 70,
             vocabItem.word,
-            { fontSize: '24px', color: '#000000', fontStyle: 'bold' }
+            { fontSize: '32px', color: '#000000', fontStyle: 'bold' }
         );
         wordText.setOrigin(0.5);
         this.popup.add(wordText);
@@ -580,7 +580,7 @@ export class Game extends Scene
         const descText = this.add.text(
             0, -popupHeight * 0.15 + 100,
             vocabItem.description,
-            { fontSize: '18px', color: '#333333', align: 'center', wordWrap: { width: popupWidth * 0.8 } }
+            { fontSize: '24px', color: '#333333', align: 'center', wordWrap: { width: popupWidth * 0.8 } }
         );
         descText.setOrigin(0.5);
         this.popup.add(descText);
@@ -589,7 +589,7 @@ export class Game extends Scene
         this.feedbackText = this.add.text(
             0, popupHeight * 0.15,
             "Press the Speech button and pronounce the word.",
-            { fontSize: '18px', color: '#0066cc', align: 'center', wordWrap: { width: popupWidth * 0.8 } }
+            { fontSize: '24px', color: '#0066cc', align: 'center', wordWrap: { width: popupWidth * 0.8 } }
         );
         this.feedbackText.setOrigin(0.5);
         this.popup.add(this.feedbackText);
@@ -610,7 +610,7 @@ export class Game extends Scene
         const buttonText = this.add.text(
             0, popupHeight * 0.3,
             'Speech',
-            { fontSize: '24px', color: '#ffffff' }
+            { fontSize: '32px', color: '#ffffff' }
         );
         buttonText.setOrigin(0.5);
 
@@ -1100,7 +1100,7 @@ export class Game extends Scene
         const contentText = this.add.text(
             0, -popupHeight * 0.05,
             'You have collected all vocabulary words along the path!\nThank you for playing the game.',
-            { fontSize: '20px', color: '#000000', align: 'center' }
+            { fontSize: '28px', color: '#000000', align: 'center' }
         );
         contentText.setOrigin(0.5);
         this.popup.add(contentText);
@@ -1120,7 +1120,7 @@ export class Game extends Scene
         const buttonText = this.add.text(
             0, popupHeight * 0.25,
             'Continue',
-            { fontSize: '24px', color: '#ffffff' }
+            { fontSize: '32px', color: '#ffffff' }
         );
         buttonText.setOrigin(0.5);
 
