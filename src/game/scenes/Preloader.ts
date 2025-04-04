@@ -32,8 +32,32 @@ export class Preloader extends Scene
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
 
+        console.log('Preloader: Loading assets...');
+
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
+        this.load.image('stage1', 'stage 1.png');
+        this.load.image('stage2', 'stage 2.png');
+        this.load.image('stage3', 'stage 3.png');
+        this.load.image('stage4', 'stage 4.png');
+        this.load.image('stage5', 'stage 5.png');
+
+        // Tải các background cho từng chặng
+        this.load.image('bg1', 'bg1.jpg');
+        this.load.image('bg2', 'bg2.jpg');
+        this.load.image('bg3', 'bg3.jpg');
+        this.load.image('bg4', 'bg4.jpg');
+        this.load.image('bg5', 'bg5.jpg');
+
+        // Thêm sự kiện để kiểm tra khi tải xong
+        this.load.on('complete', () => {
+            console.log('Preloader: All assets loaded successfully');
+            console.log('stage1 texture exists:', this.textures.exists('stage1'));
+            console.log('stage2 texture exists:', this.textures.exists('stage2'));
+            console.log('stage3 texture exists:', this.textures.exists('stage3'));
+            console.log('stage4 texture exists:', this.textures.exists('stage4'));
+            console.log('stage5 texture exists:', this.textures.exists('stage5'));
+        });
     }
 
     create ()
