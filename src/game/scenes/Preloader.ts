@@ -41,6 +41,26 @@ export class Preloader extends Scene
         this.load.image('nut-item', 'game1/nut_item.png');
         this.load.image('spark-item', 'game1/spark_item.png');
         this.load.image('plug-item', 'game1/plug_item.png');
+
+        // Tải các background cho từng chặng
+        this.load.image('bg1', 'bg1.jpg');
+        this.load.image('bg2', 'bg2.jpg');
+        this.load.image('bg3', 'bg3.jpg');
+        this.load.image('bg4', 'bg4.jpg');
+        this.load.image('bg5', 'bg5.jpg');
+
+        // Tải các file âm thanh
+        this.load.audio('music', 'music.mp3');
+        this.load.audio('swipe', 'swipe.mp3');
+        this.load.audio('select', 'select.mp3');
+
+        // Tải các file video
+        this.load.video('stage1-video', 'videos/stage1.mp4');
+        this.load.video('stage2-video', 'videos/stage2.mp4');
+        this.load.video('stage3-video', 'videos/stage3.mp4');
+        this.load.video('stage4-video', 'videos/stage4.mp4');
+        this.load.video('stage5-video', 'videos/stage5.mp4');
+
         this.load.image('cap-item', 'game1/cap_item.png');
         this.load.image('switch-item', 'game1/switch_item.png');
         this.load.image('tool-item', 'game1/tool_item.png');
@@ -82,6 +102,23 @@ export class Preloader extends Scene
         this.load.audio('correct', 'utils/correct.mp3');
         this.load.audio('wrong', 'utils/wrong.mp3');
         this.load.audio('adventure-bg', 'utils/adventure_bg.mp3');
+
+        // Thêm sự kiện để kiểm tra khi tải xong
+        this.load.on('complete', () => {
+            console.log('Preloader: All assets loaded successfully');
+            console.log('stage1 texture exists:', this.textures.exists('stage1'));
+            console.log('stage2 texture exists:', this.textures.exists('stage2'));
+            console.log('stage3 texture exists:', this.textures.exists('stage3'));
+            console.log('stage4 texture exists:', this.textures.exists('stage4'));
+            console.log('stage5 texture exists:', this.textures.exists('stage5'));
+
+            // Kiểm tra các video đã được tải chưa
+            console.log('stage1-video texture exists:', this.textures.exists('stage1-video'));
+            console.log('stage2-video texture exists:', this.textures.exists('stage2-video'));
+            console.log('stage3-video texture exists:', this.textures.exists('stage3-video'));
+            console.log('stage4-video texture exists:', this.textures.exists('stage4-video'));
+            console.log('stage5-video texture exists:', this.textures.exists('stage5-video'));
+        });
     }
 
     create ()
