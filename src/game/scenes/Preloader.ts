@@ -49,6 +49,11 @@ export class Preloader extends Scene
         this.load.image('bg4', 'bg4.jpg');
         this.load.image('bg5', 'bg5.jpg');
 
+        // Tải các file âm thanh
+        this.load.audio('music', 'music.mp3');
+        this.load.audio('swipe', 'swipe.mp3');
+        this.load.audio('select', 'select.mp3');
+
         // Thêm sự kiện để kiểm tra khi tải xong
         this.load.on('complete', () => {
             console.log('Preloader: All assets loaded successfully');

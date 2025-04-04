@@ -12,6 +12,11 @@ export class MainMenu extends Scene
     background: GameObjects.Image;
     backgroundNext: GameObjects.Image; // Background tiếp theo cho hiệu ứng crossfade
 
+    // Âm thanh
+    backgroundMusic: Phaser.Sound.BaseSound;
+    swipeSound: Phaser.Sound.BaseSound;
+    selectSound: Phaser.Sound.BaseSound;
+
     // Stage images
     stage1: GameObjects.Image;
     stage2: GameObjects.Image;
@@ -136,6 +141,19 @@ export class MainMenu extends Scene
         // Thêm hiệu ứng hover cho các stage
         this.stages.forEach(stage => this.addStageInteractivity(stage));
 
+        // Thêm hướng dẫn cho người dùng
+        const instructionText = this.add.text(centerX, centerY + 450, 'Swipe hoặc click vào stage để di chuyển', {
+            fontFamily: 'Arial',
+            fontSize: 18,
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        }).setOrigin(0.5).setDepth(100).setAlpha(0.8);
+
+        // Thiết lập âm thanh cho game
+        this.setupAudio();
+
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -246,6 +264,9 @@ export class MainMenu extends Scene
     prevStage()
     {
         if (this.currentIndex > 0) {
+            // Phát âm thanh khi chuyển stage
+            this.swipeSound.play();
+
             this.currentIndex--;
             this.updateCarousel();
         }
@@ -255,6 +276,9 @@ export class MainMenu extends Scene
     nextStage()
     {
         if (this.currentIndex < this.stages.length - 1) {
+            // Phát âm thanh khi chuyển stage
+            this.swipeSound.play();
+
             this.currentIndex++;
             this.updateCarousel();
         }
@@ -264,6 +288,31 @@ export class MainMenu extends Scene
     setupCarouselNavigation()
     {
         // Đã bỏ các nút điều hướng, chỉ sử dụng swipe và click vào stage
+    }
+
+    // Thiết lập âm thanh cho game
+    setupAudio()
+    {
+        // Tạo nhạc nền
+        this.backgroundMusic = this.sound.add('music', {
+            volume: 0.5,
+            loop: true
+        });
+
+        // Tạo âm thanh khi chuyển stage
+        this.swipeSound = this.sound.add('swipe', {
+            volume: 0.7
+        });
+
+        // Tạo âm thanh khi chọn
+        this.selectSound = this.sound.add('select', {
+            volume: 0.7
+        });
+
+        // Phát nhạc nền
+        if (!this.sound.get('music')?.isPlaying) {
+            this.backgroundMusic.play();
+        }
     }
 
     // Thiết lập input cho carousel
@@ -362,10 +411,16 @@ export class MainMenu extends Scene
             const index = this.stages.indexOf(stageImage);
 
             if (index === this.currentIndex) {
+                // Phát âm thanh khi chọn
+                this.selectSound.play();
+
                 // Chỉ chuyển cảnh khi click vào stage ở giữa
                 console.log('Clicked on center stage, changing scene...');
                 this.changeScene();
             } else {
+                // Phát âm thanh khi chuyển stage
+                this.swipeSound.play();
+
                 // Nếu click vào stage khác, chuyển stage đó vào giữa
                 console.log('Clicked on side stage, moving it to center...');
                 this.currentIndex = index;
@@ -392,6 +447,12 @@ export class MainMenu extends Scene
         this.stages.forEach(stage => {
             this.tweens.killTweensOf(stage);
         });
+
+        // Dừng nhạc nền (hoặc có thể để tiếp tục phát trong cảnh tiếp theo)
+        // this.backgroundMusic.stop();
+
+        // Phát âm thanh khi chọn
+        this.selectSound.play();
 
         this.scene.start('Game');
     }
