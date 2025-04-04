@@ -40,15 +40,15 @@ export class MainMenu extends Scene
 
     // Stage descriptions
     stageDescriptions: string[] = [
-        "Robot Pika đã bị lạc trong một khu rừng hoang dã của Trái Đất, và giờ là lúc bắt đầu cuộc hành trình đầy thử thách. Nhiệm vụ của bạn là thu thập công cụ cần thiết để sửa chữa tàu vũ trụ và tìm kiếm tín hiệu liên lạc với vũ trụ. Tuy nhiên, bạn sẽ phải đối mặt với nhiều chướng ngại: con người, thời tiết khắc nghiệt và địa hình xa lạ. Để thoát khỏi Trái Đất, bạn cần phải kích hoạt tàu vũ trụ ẩn dưới lòng đất. Chuẩn bị sẵn sàng cho cuộc phiêu lưu đầy kịch tính này!",
+        "Robot Pika đã bị lạc trong khu rừng hoang dã của Trái Đất. Nhiệm vụ của bạn là thu thập công cụ để sửa chữa tàu vũ trụ và tìm kiếm tín hiệu liên lạc. Nhưng, bạn sẽ phải đối mặt với nhiều thử thách: con người, thời tiết khắc nghiệt và địa hình xa lạ. Hãy chuẩn bị cho một cuộc phiêu lưu đầy kịch tính!",
 
-        "Pika tiếp tục hành trình khi tàu vũ trụ bị lạc trong vành đai thiên thạch. Nhiệm vụ của bạn là thu thập các món đồ quan trọng, mỗi món đồ chứa một từ vựng. Phát âm đúng từ sẽ giúp Pika khôi phục hệ thống tàu và tiến gần hơn đến việc thoát khỏi thiên thạch. Hãy sẵn sàng và thu thập đồ để mở cổng không gian ẩn!",
+        "Pika tiếp tục hành trình qua vành đai thiên thạch. Nhiệm vụ lần này là thu thập các món đồ chứa từ vựng và phát âm đúng để khôi phục hệ thống tàu, tiến gần hơn đến cổng không gian ẩn. Chuẩn bị sẵn sàng!",
 
-        "Pika hạ cánh trên một hành tinh đỏ đầy bí ẩn, nơi cậu phải thu thập năng lượng quý giá để phục hồi tàu vũ trụ. Nhiệm vụ của bạn là tìm kiếm các món đồ chứa đựng nguồn năng lượng, mỗi món đồ là một từ vựng mới giúp bạn luyện phát âm. Thu thập đủ để hoàn thành nhiệm vụ và giúp Pika tiếp tục hành trình nha!",
+        "Pika hạ cánh trên hành tinh đỏ và cần thu thập năng lượng để phục hồi tàu. Tìm các món đồ chứa từ vựng mới và luyện phát âm để tiếp tục hành trình nào!",
 
         "Pika đang khám phá một trạm không gian bỏ hoang và không ổn định. Để tìm tọa độ dẫn đến Final Stage, cậu phải thu thập các bộ phận quan trọng từ các mảnh vỡ của trạm và kích hoạt lại hệ thống. Mỗi món đồ bạn thu thập là một từ vựng với âm tiên tiến, giúp bạn luyện phát âm phức tạp. Quyết tâm để khôi phục hệ thống và tiến xa hơn trong hành trình nào!",
 
-        "Pika đã đến được Eclipse Nexus, nơi giao thoa giữa các vũ trụ song song. Đây là cơ hội cuối cùng để Pika tìm được đường về nhà. Nhiệm vụ của bạn là thu thập các mảnh ghép năng lượng để mở cổng không gian cuối cùng. Mỗi mảnh ghép là một từ vựng cao cấp, giúp bạn hoàn thiện kỹ năng phát âm. Hãy nỗ lực để hoàn thành nhiệm vụ cuối cùng và đưa Pika trở về nhà!"
+        "Pika khám phá trạm không gian bỏ hoang để tìm tọa độ Final Stage. Thu thập các bộ phận từ mảnh vỡ, mỗi món đồ là một từ vựng phức tạp giúp luyện phát âm. Khôi phục hệ thống và tiến xa hơn trong hành trình!"
     ];
 
     // Stage name text
@@ -684,7 +684,7 @@ export class MainMenu extends Scene
         // Thêm mô tả cho stage - đặt vị trí dựa vào vị trí video
         const descriptionText = this.add.text(0, this.videoPlayer.y + (finalHeight / 2) + 50, currentDescription, {
             fontFamily: 'Arial',
-            fontSize: 22,
+            fontSize: 36,
             color: '#ffffff',
             align: 'center',
             wordWrap: { width: popupWidth - 120 },
