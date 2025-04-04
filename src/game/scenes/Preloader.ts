@@ -80,6 +80,7 @@ export class Preloader extends Scene
 
         this.load.image('idle-player', 'game1/player/idle.png');
         this.load.image('walk-player', 'game1/player/walk.png');
+        this.load.image('end-game', 'game1/end_game.png');
         // Load audio assets from audio directory
         this.load.setPath('audio');
 
@@ -93,7 +94,7 @@ export class Preloader extends Scene
         this.load.audio('music', 'music.mp3');
         this.load.audio('swipe', 'swipe.mp3');
         this.load.audio('select', 'select.mp3');
-        
+
         // game 1
         this.load.audio('amp-word-audio', 'game1/words/amp.mp3');
         this.load.audio('nut-word-audio', 'game1/words/nut.mp3');
@@ -133,6 +134,6 @@ export class Preloader extends Scene
         //  For example, you can define global animations here, so we can use them in other scenes.
 
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
+        this.scene.start('Game');
     }
 }

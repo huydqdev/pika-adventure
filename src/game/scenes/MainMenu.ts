@@ -22,6 +22,12 @@ export class MainMenu extends Scene
     videoPlayer: Phaser.GameObjects.Video;
     isPopupOpen: boolean = false;
 
+    // Message popup
+    messagePopup: GameObjects.Container;
+
+    // Stage unlock state
+    unlockedStages: boolean[] = [true, true, false, false, false]; // Only stages 1 and 2 are unlocked initially
+
     // Stage images
     stage1: GameObjects.Image;
     stage2: GameObjects.Image;
@@ -201,10 +207,17 @@ export class MainMenu extends Scene
         const newX = -this.currentIndex * 600; // 600 là khoảng cách giữa các stage
 
         // Dừng tất cả các tween hiện tại trên các stage
-        this.stages.forEach(stage => {
+        this.stages.forEach((stage, index) => {
             this.tweens.killTweensOf(stage);
-            // Đặt lại alpha và vị trí y
-            stage.setAlpha(1);
+
+            // Đặt lại alpha dựa vào trạng thái mở khóa
+            if (this.unlockedStages[index]) {
+                stage.setAlpha(1); // Stage đã mở khóa hiển thị bình thường
+            } else {
+                stage.setAlpha(0.5); // Stage chưa mở khóa hiển thị mờ
+            }
+
+            // Đặt lại vị trí y
             stage.y = 0;
         });
 
@@ -236,44 +249,50 @@ export class MainMenu extends Scene
 
         // Cập nhật scale cho các stage
         this.stages.forEach((stage, index) => {
+            // Kiểm tra xem stage có bị khóa không
+            const isUnlocked = this.unlockedStages[index];
+
             if (index === this.currentIndex) {
                 // Stage hiện tại lớn hơn và có hiệu ứng chuyển động
                 this.tweens.add({
                     targets: stage,
-                    scale: 0.8, // Tăng scale lớn hơn nữa (từ 0.7 lên 0.8)
+                    scale: isUnlocked ? 0.8 : 0.6, // Stage bị khóa sẽ nhỏ hơn
                     duration: 600,
                     ease: 'Back.easeOut' // Hiệu ứng bật lên một chút khi đạt kích thước tối đa
                 });
 
-                // Thêm hiệu ứng chuyển động nổi (floating) cho stage được focus
-                this.tweens.add({
-                    targets: stage,
-                    y: -20, // Di chuyển lên trên nhiều hơn
-                    duration: 1800,
-                    yoyo: true, // Quay lại vị trí ban đầu
-                    repeat: -1, // Lặp lại vô hạn
-                    ease: 'Sine.easeInOut' // Hiệu ứng mượt mà
-                });
+                // Chỉ thêm hiệu ứng nổi cho stage đã mở khóa
+                if (isUnlocked) {
+                    // Thêm hiệu ứng chuyển động nổi (floating) cho stage được focus
+                    this.tweens.add({
+                        targets: stage,
+                        y: -20, // Di chuyển lên trên nhiều hơn
+                        duration: 1800,
+                        yoyo: true, // Quay lại vị trí ban đầu
+                        repeat: -1, // Lặp lại vô hạn
+                        ease: 'Sine.easeInOut' // Hiệu ứng mượt mà
+                    });
 
-                // Thêm hiệu ứng ánh sáng nhấp nháy
-                this.tweens.add({
-                    targets: stage,
-                    alpha: 0.85,
-                    duration: 1200,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut'
-                });
+                    // Thêm hiệu ứng ánh sáng nhấp nháy
+                    this.tweens.add({
+                        targets: stage,
+                        alpha: 0.85,
+                        duration: 1200,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: 'Sine.easeInOut'
+                    });
 
-                // Thêm hiệu ứng xoay nhẹ nhàng
-                this.tweens.add({
-                    targets: stage,
-                    angle: 2, // Xoay nhẹ 2 độ
-                    duration: 2500,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut'
-                });
+                    // Thêm hiệu ứng xoay nhẹ nhàng
+                    this.tweens.add({
+                        targets: stage,
+                        angle: 2, // Xoay nhẹ 2 độ
+                        duration: 2500,
+                        yoyo: true,
+                        repeat: -1,
+                        ease: 'Sine.easeInOut'
+                    });
+                }
             } else {
                 // Các stage khác nhỏ hơn
                 this.tweens.add({
@@ -437,6 +456,22 @@ export class MainMenu extends Scene
     // Thêm hiệu ứng hover và click cho stage
     addStageInteractivity(stageImage: GameObjects.Image)
     {
+        const stageIndex = this.stages.indexOf(stageImage);
+        const isUnlocked = this.unlockedStages[stageIndex];
+
+        // Nếu stage bị khóa, thêm hiệu ứng mờ để chỉ ra rằng nó bị khóa
+        if (!isUnlocked) {
+            // Thêm hiệu ứng mờ cho stage bị khóa
+            stageImage.setAlpha(0.5); // Làm mờ đi
+
+            // Thêm biểu tượng khóa
+            const lockIcon = this.add.text(stageImage.x, stageImage.y, '🔒', { // Unicode lock emoji
+                fontSize: '32px'
+            });
+            lockIcon.setOrigin(0.5);
+            lockIcon.setDepth(stageImage.depth + 1); // Đặt trên stage
+        }
+
         stageImage.setInteractive({ useHandCursor: true });
 
         stageImage.on('pointerover', () => {
@@ -464,10 +499,18 @@ export class MainMenu extends Scene
         stageImage.on('pointerdown', () => {
             console.log('Click on stage:', this.stages.indexOf(stageImage));
 
-            // Nếu click vào stage ở giữa, chuyển cảnh
+            // Nếu click vào stage ở giữa, kiểm tra xem nó có bị khóa không
             const index = this.stages.indexOf(stageImage);
 
+            // Kiểm tra xem stage có bị khóa không
             if (index === this.currentIndex) {
+                if (!this.unlockedStages[index]) {
+                    // Nếu stage bị khóa, hiển thị thông báo
+                    console.log(`Stage ${index + 1} is locked`);
+                    this.showLockedStageMessage(index + 1);
+                    return;
+                }
+
                 // Phát âm thanh khi chọn
                 try {
                     if (this.selectSound && this.selectSound.isPlaying) {
@@ -737,6 +780,96 @@ export class MainMenu extends Scene
 
         this.isPopupOpen = false;
         console.log('Video popup closed');
+    }
+
+    // Hiển thị popup thông báo khi stage chưa mở khóa
+    showLockedStageMessage(stageNumber: number)
+    {
+        // Lấy kích thước màn hình
+        const width = this.scale.width;
+        const height = this.scale.height;
+
+        // Tạo container cho popup
+        this.messagePopup = this.add.container(width / 2, height / 2);
+        this.messagePopup.setDepth(1000); // Đặt độ sâu cao nhất để hiển thị trên tất cả
+
+        // Tạo overlay màu đen mờ để làm nền cho popup
+        const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.7);
+        overlay.setOrigin(0.5);
+
+        // Tạo viền cho popup
+        const popupWidth = width * 0.6;
+        const popupHeight = height * 0.3;
+        const border = this.add.rectangle(0, 0, popupWidth, popupHeight, 0x333333);
+        border.setOrigin(0.5);
+        border.setStrokeStyle(4, 0xffffff);
+
+        // Thêm tiêu đề cho popup
+        const title = this.add.text(0, -popupHeight / 2 + 40, `STAGE ${stageNumber} LOCKED`, {
+            fontFamily: 'Arial Black',
+            fontSize: 28,
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        });
+        title.setOrigin(0.5);
+
+        // Thêm nút đóng
+        const closeButton = this.add.text(popupWidth / 2 - 30, -popupHeight / 2 + 30, 'X', {
+            fontFamily: 'Arial',
+            fontSize: 24,
+            color: '#ffffff'
+        });
+        closeButton.setOrigin(0.5);
+        closeButton.setInteractive({ useHandCursor: true });
+        closeButton.on('pointerdown', () => this.closeMessagePopup());
+
+        // Thêm thông báo
+        const message = this.add.text(0, 0, 'Bạn phải hoàn thành hết các stage trước!', {
+            fontFamily: 'Arial',
+            fontSize: 24,
+            color: '#ffffff',
+            align: 'center'
+        });
+        message.setOrigin(0.5);
+
+        // Thêm các phần tử vào container
+        this.messagePopup.add([overlay, border, closeButton, title, message]);
+
+        // Thêm sự kiện click cho overlay để đóng popup
+        overlay.setInteractive();
+        overlay.on('pointerdown', (pointer) => {
+            // Chỉ đóng khi click vào overlay, không phải các phần tử khác trong popup
+            if (pointer.y < border.y - popupHeight / 2 ||
+                pointer.y > border.y + popupHeight / 2 ||
+                pointer.x < border.x - popupWidth / 2 ||
+                pointer.x > border.x + popupWidth / 2) {
+                this.closeMessagePopup();
+            }
+        });
+
+        // Hiệu ứng xuất hiện
+        this.messagePopup.setScale(0.8);
+        this.messagePopup.setAlpha(0);
+        this.tweens.add({
+            targets: this.messagePopup,
+            scale: 1,
+            alpha: 1,
+            duration: 200,
+            ease: 'Back.easeOut'
+        });
+    }
+
+    // Đóng popup thông báo
+    closeMessagePopup()
+    {
+        if (!this.messagePopup) return;
+
+        // Xóa popup
+        this.messagePopup.destroy();
+        this.messagePopup = null;
+
+        console.log('Message popup closed');
     }
 
     // Phương thức thay đổi background theo chặng sử dụng kỹ thuật crossfade

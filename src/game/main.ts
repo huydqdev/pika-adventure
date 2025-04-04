@@ -7,6 +7,7 @@ import { Preloader } from './scenes/Preloader';
 import { Game2 } from './scenes/Game2';
 // import { Game3 } from './scenes/Game3';
 import { Game4 } from './scenes/Game4';
+import { EndGame } from './scenes/EndGame';
 
 
 //  Find out more information about the Game Config at:
@@ -30,6 +31,7 @@ const config: Phaser.Types.Core.GameConfig = {
         // Game3,
         Game4,
         GameOver,
+        EndGame,
     ]
 };
 

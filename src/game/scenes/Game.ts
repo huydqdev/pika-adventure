@@ -1219,8 +1219,9 @@ export class Game extends Scene
             // Stop all audio before navigating
             this.stopAllAudio();
 
-            // Navigate to MainMenu scene
-            this.scene.start('MainMenu');
+            // Navigate to EndGame scene instead of MainMenu
+            // This shows the congratulations screen for completing stage 1
+            this.scene.start('EndGame');
         });
     }
 
