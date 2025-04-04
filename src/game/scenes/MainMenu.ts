@@ -594,12 +594,21 @@ export class MainMenu extends Scene
 
             // Sử dụng delayedCall để đảm bảo âm thanh được phát trước khi chuyển cảnh
             this.time.delayedCall(300, () => {
-                this.scene.start('Game');
+                // Kiểm tra stage hiện tại và chuyển đến màn chơi tương ứng
+                if (this.currentIndex === 0) { // Stage 1
+                    this.scene.start('Game');
+                } else if (this.currentIndex === 1) { // Stage 2
+                    this.scene.start('Game4');
+                }
             });
         } catch (error) {
             console.error('Error playing select sound:', error);
-            // Nếu có lỗi vẫn chuyển cảnh
-            this.scene.start('Game');
+            // Nếu có lỗi vẫn chuyển cảnh theo stage tương ứng
+            if (this.currentIndex === 0) {
+                this.scene.start('Game');
+            } else if (this.currentIndex === 1) {
+                this.scene.start('Game4');
+            }
         }
     }
 
