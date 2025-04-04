@@ -1,50 +1,55 @@
 import { EventBus } from '../EventBus';
 import { Scene } from 'phaser';
 
-// Add type definitions for SpeechRecognition API
-declare global {
-    interface Window {
-        SpeechRecognition: new () => SpeechRecognition;
-        webkitSpeechRecognition: new () => SpeechRecognition;
-    }
+// Define SpeechRecognition types for TypeScript
+interface SpeechRecognitionResult {
+    transcript: string;
+    confidence: number;
 }
 
-// SpeechRecognition type definitions
+interface SpeechRecognitionResultList {
+    [index: number]: SpeechRecognitionResult;
+    length: number;
+    item(index: number): SpeechRecognitionResult;
+    isFinal: boolean;
+}
+
+interface SpeechRecognitionEvent extends Event {
+    results: {
+        [index: number]: SpeechRecognitionResultList;
+        length: number;
+        item(index: number): SpeechRecognitionResultList;
+    };
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+    error: string;
+    message: string;
+}
+
 interface SpeechRecognition extends EventTarget {
     continuous: boolean;
     interimResults: boolean;
     lang: string;
     start(): void;
     stop(): void;
-    abort(): void;
-    onresult: (event: SpeechRecognitionEvent) => void;
-    onerror: (event: SpeechRecognitionErrorEvent) => void;
-    onend: () => void;
+    onresult: ((event: SpeechRecognitionEvent) => void) | null;
+    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+    onend: (() => void) | null;
 }
 
-interface SpeechRecognitionEvent {
-    results: SpeechRecognitionResultList;
+// Since we're having type declaration conflicts with browser's native types,
+// let's define our custom type for the speech recognition API
+interface SpeechRecognitionConstructor {
+    new(): SpeechRecognition;
 }
 
-interface SpeechRecognitionResultList {
-    readonly length: number;
-    [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-    readonly length: number;
-    [index: number]: SpeechRecognitionAlternative;
-    isFinal: boolean;
-}
-
-interface SpeechRecognitionAlternative {
-    transcript: string;
-    confidence: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-    error: string;
-    message: string;
+// And create a cleaner interface for accessing these on the window object
+declare global {
+    interface Window {
+        SpeechRecognition?: SpeechRecognitionConstructor;
+        webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    }
 }
 
 export class Game4 extends Scene
@@ -94,8 +99,8 @@ export class Game4 extends Scene
     speechRecognition: SpeechRecognition | null = null;
     
     // Word arrays for commands - will cycle through these with each successful command
-    attackWords: string[] = ['Sword', 'Strike', 'Slash', 'Attack', 'Stab'];
-    defenseWords: string[] = ['Shield', 'Block', 'Defend', 'Guard', 'Parry'];
+    attackWords: string[] = ['Sword', 'Strike', 'Attack', 'Stab'];
+    defenseWords: string[] = ['Shield', 'Block', 'Defend', 'Guard'];
     currentAttackWordIndex: number = 0;
     currentDefenseWordIndex: number = 0;
     
@@ -111,37 +116,33 @@ export class Game4 extends Scene
     {
         // Set up camera and background
         this.camera = this.cameras.main;
-        this.camera.setBackgroundColor('#8B0000'); // Dark red for the planet
         
         // Get the actual game width and height
         const gameWidth = this.cameras.main.width;
         const gameHeight = this.cameras.main.height;
         
-        // Create red planet environment (simple gradient background)
-        const graphics = this.add.graphics();
-        graphics.fillGradientStyle(0xAA0000, 0xAA0000, 0x660000, 0x660000, 1);
-        graphics.fillRect(0, 0, gameWidth, gameHeight);
+        // Add background image instead of solid color
+        this.background = this.add.image(gameWidth / 2, gameHeight / 2, 'background_2');
+        
+        // Scale the background to cover the entire screen
+        this.background.setDisplaySize(gameWidth, gameHeight);
+        
+        // Set the depth to ensure it's behind everything else
+        this.background.setDepth(-1);
         
         // Add some random "energy surge" particles
         this.createEnergySurges();
         
         // Add spaceship (disabled/crashed state)
-        this.spaceship = this.add.image(gameWidth * 0.85, gameHeight * 0.2, 'spaceship');
-        // Note: 'spaceship' is a placeholder, you'll need to add the actual asset
-        // For now, we'll create a placeholder shape
-        const spaceshipGraphics = this.add.graphics();
-        spaceshipGraphics.fillStyle(0x888888);
-        spaceshipGraphics.fillRoundedRect(gameWidth * 0.8, gameHeight * 0.15, gameWidth * 0.1, gameHeight * 0.1, 10);
-        spaceshipGraphics.lineStyle(2, 0x444444);
-        spaceshipGraphics.strokeRoundedRect(gameWidth * 0.8, gameHeight * 0.15, gameWidth * 0.1, gameHeight * 0.1, 10);
+        this.spaceship = this.add.image(gameWidth * 0.85, gameHeight * 0.2, 'ship');
+        this.spaceship.setOrigin(0.5);
+        this.spaceship.setScale(0.7); // SHIP SCALING: Currently set to 0.7 - adjust this value to change ship size
         
         // Add Pika character
-        this.pika = this.add.sprite(gameWidth * 0.2, gameHeight * 0.7, 'pika');
-        // Note: 'pika' is a placeholder, you'll need to add the actual asset
-        // For now, we'll create a placeholder shape
-        const pikaGraphics = this.add.graphics();
-        pikaGraphics.fillStyle(0xFFFF00);
-        pikaGraphics.fillCircle(gameWidth * 0.2, gameHeight * 0.7, 30);
+        this.pika = this.add.sprite(gameWidth * 0.2, gameHeight * 0.7, 'idle-player');
+        this.pika.setOrigin(0.5);
+        // Set exact pixel dimensions
+        this.pika.setDisplaySize(100, 120); // Set explicit width and height in pixels
         
         // Create energy bar
         this.createEnergyBar();
@@ -306,30 +307,15 @@ export class Game4 extends Scene
         const gameWidth = this.cameras.main.width;
         const gameHeight = this.cameras.main.height;
         
-        // Create monster placeholder
+        // Create monster using sprite only
         this.currentMonster = this.add.sprite(
             gameWidth * 0.7,
             gameHeight * 0.5,
             'monster'
         );
-        // Note: 'monster' is a placeholder, you'll need to add the actual asset
-        
-        // For now, we'll create a placeholder shape with random color
-        const monsterColor = Phaser.Display.Color.RandomRGB().color;
-        const monsterGraphics = this.add.graphics();
-        monsterGraphics.fillStyle(monsterColor);
-        monsterGraphics.fillRoundedRect(gameWidth * 0.65, gameHeight * 0.4, 80, 100, 10);
-        monsterGraphics.lineStyle(2, 0x880000);
-        monsterGraphics.strokeRoundedRect(gameWidth * 0.65, gameHeight * 0.4, 80, 100, 10);
-        
-        // Add eyes to the monster
-        monsterGraphics.fillStyle(0xFFFFFF);
-        monsterGraphics.fillCircle(gameWidth * 0.65 + 20, gameHeight * 0.4 + 30, 10);
-        monsterGraphics.fillCircle(gameWidth * 0.65 + 60, gameHeight * 0.4 + 30, 10);
-        
-        monsterGraphics.fillStyle(0x000000);
-        monsterGraphics.fillCircle(gameWidth * 0.65 + 20, gameHeight * 0.4 + 30, 5);
-        monsterGraphics.fillCircle(gameWidth * 0.65 + 60, gameHeight * 0.4 + 30, 5);
+        this.currentMonster.setOrigin(0.5);
+        // Set exact pixel dimensions
+        this.currentMonster.setDisplaySize(120, 140); // Set explicit width and height in pixels
         
         // Create monster health bar
         this.monsterHealthBar = this.add.graphics();
@@ -393,6 +379,7 @@ export class Game4 extends Scene
         );
         this.attackButton.setInteractive({ useHandCursor: true });
         
+        // Add padding to text by using a slightly smaller width for text than button
         const attackText = this.add.text(
             gameWidth * 0.3,
             gameHeight * 0.9,
@@ -401,7 +388,8 @@ export class Game4 extends Scene
                 fontSize: '18px', 
                 color: '#FFFFFF',
                 fontFamily: 'Fuzzy Bubbles, Arial, sans-serif',
-                fontStyle: 'bold'
+                fontStyle: 'bold',
+                padding: { x: 10, y: 5 } // Add padding to the text
             }
         );
         attackText.setOrigin(0.5);
@@ -428,6 +416,7 @@ export class Game4 extends Scene
         );
         this.defenseButton.setInteractive({ useHandCursor: true });
         
+        // Add padding to text by using a slightly smaller width for text than button
         const defenseText = this.add.text(
             gameWidth * 0.7,
             gameHeight * 0.9,
@@ -436,7 +425,8 @@ export class Game4 extends Scene
                 fontSize: '18px', 
                 color: '#FFFFFF',
                 fontFamily: 'Fuzzy Bubbles, Arial, sans-serif',
-                fontStyle: 'bold'
+                fontStyle: 'bold',
+                padding: { x: 10, y: 5 } // Add padding to the text
             }
         );
         defenseText.setOrigin(0.5);
@@ -467,20 +457,32 @@ export class Game4 extends Scene
     initSpeechRecognition() {
         // Check if browser supports SpeechRecognition
         if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-            // Create a speech recognition instance
-            const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
-            this.speechRecognition = new SpeechRecognitionApi();
-            
-            if (this.speechRecognition) {
-                // Configure speech recognition
-                this.speechRecognition.continuous = false;
-                this.speechRecognition.interimResults = false;
-                this.speechRecognition.lang = 'en-US';
+            try {
+                // Create a speech recognition instance
+                // We use the ! non-null assertion operator to tell TypeScript we know these exist
+                // We checked them with the if condition above
+                const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
                 
-                // Add event listeners
-                this.speechRecognition.onresult = this.handleSpeechResult.bind(this);
-                this.speechRecognition.onerror = this.handleSpeechError.bind(this);
-                this.speechRecognition.onend = this.handleSpeechEnd.bind(this);
+                if (SpeechRecognitionApi) {
+                    // Use a two-step type assertion to safely convert between incompatible types
+                    // First to unknown, then to our SpeechRecognition interface
+                    const recognition = new SpeechRecognitionApi();
+                    this.speechRecognition = recognition as unknown as SpeechRecognition;
+                    
+                    // Configure speech recognition
+                    this.speechRecognition.continuous = false;
+                    this.speechRecognition.interimResults = false;
+                    this.speechRecognition.lang = 'en-US';
+                    
+                    // Add event listeners
+                    this.speechRecognition.onresult = this.handleSpeechResult.bind(this);
+                    this.speechRecognition.onerror = this.handleSpeechError.bind(this);
+                    this.speechRecognition.onend = this.handleSpeechEnd.bind(this);
+                }
+            } catch (e) {
+                console.error('Error initializing speech recognition:', e);
+                this.feedbackText.setText('Speech recognition initialization failed.');
+                this.feedbackText.setColor('#FF0000');
             }
         } else {
             console.log('Speech recognition not supported in this browser');
@@ -508,9 +510,22 @@ export class Game4 extends Scene
         // This combines both how close the word was to the expected word
         // and how confident the speech recognition was in the result
         const similarity = this.calculateStringSimilarity(result, expectedWord);
-        this.commandAccuracy = similarity * confidence;
         
-        console.log(`Expected: "${expectedWord}", Similarity: ${similarity}, Final accuracy: ${this.commandAccuracy}`);
+        // Modified accuracy calculation - give more weight to similarity
+        // If similarity is very high (>0.9), we boost the accuracy
+        // This ensures that when the word is correct, lower confidence won't fail the attempt
+        let weightedAccuracy;
+        if (similarity > 0.9) {
+            // Give more weight to similarity when it's very high
+            weightedAccuracy = (similarity * 0.7) + (confidence * 0.3);
+        } else {
+            // For less similar results, keep using both factors more evenly
+            weightedAccuracy = (similarity * 0.6) + (confidence * 0.4);
+        }
+        
+        this.commandAccuracy = weightedAccuracy;
+        
+        console.log(`Expected: "${expectedWord}", Similarity: ${similarity}, Confidence: ${confidence}, Final accuracy: ${this.commandAccuracy}`);
         
         // Display feedback based on accuracy
         this.displayFeedback();
@@ -545,7 +560,16 @@ export class Game4 extends Scene
         // Reset game state after a delay
         this.time.delayedCall(2000, () => {
             this.gameState = 'playing';
-            this.voiceCommandText.setText('Say: ...');
+            
+            // Show the current word to say instead of "Say: ..."
+            let currentWord = "";
+            if (this.currentCommand === 'sword') {
+                currentWord = this.attackWords[this.currentAttackWordIndex];
+            } else {
+                currentWord = this.defenseWords[this.currentDefenseWordIndex];
+            }
+            this.voiceCommandText.setText(`Say: "${currentWord}"`);
+            
             this.feedbackText.setText('');
             
             // Check if monster is defeated
@@ -988,7 +1012,22 @@ export class Game4 extends Scene
     processVoiceResult() {
         // This is a fallback for browsers without speech recognition
         // Simulate voice recognition accuracy (random for demo)
-        this.commandAccuracy = Phaser.Math.FloatBetween(0.5, 1);
+        const simulatedSimilarity = Phaser.Math.FloatBetween(0.7, 1);
+        const simulatedConfidence = Phaser.Math.FloatBetween(0.5, 1);
+        
+        // Use the same weighted calculation as in handleSpeechResult
+        let weightedAccuracy;
+        if (simulatedSimilarity > 0.9) {
+            // Give more weight to similarity when it's very high
+            weightedAccuracy = (simulatedSimilarity * 0.7) + (simulatedConfidence * 0.3);
+        } else {
+            // For less similar results, keep using both factors more evenly
+            weightedAccuracy = (simulatedSimilarity * 0.6) + (simulatedConfidence * 0.4);
+        }
+        
+        this.commandAccuracy = weightedAccuracy;
+        
+        console.log(`Simulated result - Similarity: ${simulatedSimilarity}, Confidence: ${simulatedConfidence}, Final accuracy: ${this.commandAccuracy}`);
         
         // Display feedback
         this.displayFeedback();
@@ -1022,7 +1061,16 @@ export class Game4 extends Scene
         // Reset game state after a delay
         this.time.delayedCall(2000, () => {
             this.gameState = 'playing';
-            this.voiceCommandText.setText('Say: ...');
+            
+            // Show the current word to say instead of "Say: ..."
+            let currentWord = "";
+            if (this.currentCommand === 'sword') {
+                currentWord = this.attackWords[this.currentAttackWordIndex];
+            } else {
+                currentWord = this.defenseWords[this.currentDefenseWordIndex];
+            }
+            this.voiceCommandText.setText(`Say: "${currentWord}"`);
+            
             this.feedbackText.setText('');
             
             // Check if monster is defeated
@@ -1109,9 +1157,32 @@ export class Game4 extends Scene
             repeat: 2
         });
         
-        // Add energy based on accuracy
-        const energyGain = Math.floor(10 * accuracy);
+        // Add energy based on accuracy - INCREASED from 10 to 20
+        const energyGain = Math.floor(20 * accuracy);
         this.addEnergy(energyGain);
+        
+        // Show energy gain text
+        const energyText = this.add.text(
+            this.pika.x, 
+            this.pika.y - 80,
+            `+${energyGain} Energy`,
+            { 
+                fontSize: '18px', 
+                color: '#00FF00', 
+                fontStyle: 'bold',
+                fontFamily: 'Fuzzy Bubbles, Arial, sans-serif'
+            }
+        );
+        
+        this.tweens.add({
+            targets: energyText,
+            y: energyText.y - 30,
+            alpha: { from: 1, to: 0 },
+            duration: 1000,
+            onComplete: () => {
+                energyText.destroy();
+            }
+        });
         
         // Update score
         this.score += damage;
@@ -1166,9 +1237,32 @@ export class Game4 extends Scene
             }
         });
         
-        // Add energy based on accuracy
-        const energyGain = Math.floor(5 * accuracy);
+        // Add energy based on accuracy - INCREASED from 5 to 15
+        const energyGain = Math.floor(15 * accuracy);
         this.addEnergy(energyGain);
+        
+        // Show energy gain text
+        const energyText = this.add.text(
+            this.pika.x, 
+            this.pika.y - 100,
+            `+${energyGain} Energy`,
+            { 
+                fontSize: '18px', 
+                color: '#00FF00', 
+                fontStyle: 'bold',
+                fontFamily: 'Fuzzy Bubbles, Arial, sans-serif'
+            }
+        );
+        
+        this.tweens.add({
+            targets: energyText,
+            y: energyText.y - 30,
+            alpha: { from: 1, to: 0 },
+            duration: 1000,
+            onComplete: () => {
+                energyText.destroy();
+            }
+        });
         
         // Update score
         this.score += Math.floor(shieldStrength / 2);
@@ -1286,29 +1380,15 @@ export class Game4 extends Scene
         // Set fixed monster health instead of level-based
         this.monsterHealth = 100;
         
-        // Create monster placeholder
+        // Create monster using sprite only
         this.currentMonster = this.add.sprite(
             gameWidth * 0.7,
             gameHeight * 0.5,
             'monster'
         );
-        
-        // For now, we'll create a placeholder shape with random color
-        const monsterColor = Phaser.Display.Color.RandomRGB().color;
-        const monsterGraphics = this.add.graphics();
-        monsterGraphics.fillStyle(monsterColor);
-        monsterGraphics.fillRoundedRect(gameWidth * 0.65, gameHeight * 0.4, 80, 100, 10);
-        monsterGraphics.lineStyle(2, 0x880000);
-        monsterGraphics.strokeRoundedRect(gameWidth * 0.65, gameHeight * 0.4, 80, 100, 10);
-        
-        // Add eyes to the monster
-        monsterGraphics.fillStyle(0xFFFFFF);
-        monsterGraphics.fillCircle(gameWidth * 0.65 + 20, gameHeight * 0.4 + 30, 10);
-        monsterGraphics.fillCircle(gameWidth * 0.65 + 60, gameHeight * 0.4 + 30, 10);
-        
-        monsterGraphics.fillStyle(0x000000);
-        monsterGraphics.fillCircle(gameWidth * 0.65 + 20, gameHeight * 0.4 + 30, 5);
-        monsterGraphics.fillCircle(gameWidth * 0.65 + 60, gameHeight * 0.4 + 30, 5);
+        this.currentMonster.setOrigin(0.5);
+        // Use same smaller size for consistency
+        this.currentMonster.setDisplaySize(120, 140); // Match the scale used in createMonsterArea
         
         // Update monster health bar
         this.updateMonsterHealthBar();
@@ -1356,7 +1436,7 @@ export class Game4 extends Scene
         // Add title
         const titleText = this.add.text(
             0, -gameHeight * 0.15,
-            'Spaceship Repair',
+            'Sửa Chữa Tàu Vũ Trụ',
             { 
                 fontSize: '32px', 
                 color: '#000000', 
@@ -1370,7 +1450,7 @@ export class Game4 extends Scene
         // Add message
         const messageText = this.add.text(
             0, -gameHeight * 0.05,
-            'You have collected enough energy to repair your spaceship!\nWould you like to use the energy now?',
+            'Bạn đã thu thập đủ năng lượng để sửa chữa tàu vũ trụ của mình!\nBạn có muốn sử dụng năng lượng ngay bây giờ không?',
             { 
                 fontSize: '20px', 
                 color: '#000000', 
@@ -1428,7 +1508,7 @@ export class Game4 extends Scene
         
         const repairText = this.add.text(
             -gameWidth * 0.1, gameHeight * 0.1,
-            'Repair Now',
+            'Sửa Ngay',
             { 
                 fontSize: '24px', 
                 color: '#FFFFFF',
@@ -1440,8 +1520,8 @@ export class Game4 extends Scene
         
         const continueText = this.add.text(
             gameWidth * 0.1, gameHeight * 0.1,
-            'Continue Playing',
-            { fontSize: '20px', color: '#FFFFFF' }
+            'Màn Hình Chính',
+            { fontSize: '20px', color: '#FFFFFF', fontFamily: 'Fuzzy Bubbles, Arial, sans-serif', fontStyle: 'bold' }
         );
         continueText.setOrigin(0.5);
         
@@ -1456,7 +1536,7 @@ export class Game4 extends Scene
         });
         
         continueButton.on('pointerdown', () => {
-            this.hidePopup();
+            this.scene.start('MainMenu');
         });
         
         // Animate popup appearance
