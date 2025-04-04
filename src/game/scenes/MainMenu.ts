@@ -17,6 +17,11 @@ export class MainMenu extends Scene
     swipeSound: Phaser.Sound.BaseSound;
     selectSound: Phaser.Sound.BaseSound;
 
+    // Video popup
+    videoPopup: GameObjects.Container;
+    videoPlayer: Phaser.GameObjects.Video;
+    isPopupOpen: boolean = false;
+
     // Stage images
     stage1: GameObjects.Image;
     stage2: GameObjects.Image;
@@ -31,6 +36,19 @@ export class MainMenu extends Scene
         'Crimson Exoplanet',
         'Void Rift Station',
         'Eclipse Nexus'
+    ];
+
+    // Stage descriptions
+    stageDescriptions: string[] = [
+        "Robot Pika đã bị lạc trong một khu rừng hoang dã của Trái Đất, và giờ là lúc bắt đầu cuộc hành trình đầy thử thách. Nhiệm vụ của bạn là thu thập công cụ cần thiết để sửa chữa tàu vũ trụ và tìm kiếm tín hiệu liên lạc với vũ trụ. Tuy nhiên, bạn sẽ phải đối mặt với nhiều chướng ngại: con người, thời tiết khắc nghiệt và địa hình xa lạ. Để thoát khỏi Trái Đất, bạn cần phải kích hoạt tàu vũ trụ ẩn dưới lòng đất. Chuẩn bị sẵn sàng cho cuộc phiêu lưu đầy kịch tính này!",
+
+        "Pika tiếp tục hành trình khi tàu vũ trụ bị lạc trong vành đai thiên thạch. Nhiệm vụ của bạn là thu thập các món đồ quan trọng, mỗi món đồ chứa một từ vựng. Phát âm đúng từ sẽ giúp Pika khôi phục hệ thống tàu và tiến gần hơn đến việc thoát khỏi thiên thạch. Hãy sẵn sàng và thu thập đồ để mở cổng không gian ẩn!",
+
+        "Pika hạ cánh trên một hành tinh đỏ đầy bí ẩn, nơi cậu phải thu thập năng lượng quý giá để phục hồi tàu vũ trụ. Nhiệm vụ của bạn là tìm kiếm các món đồ chứa đựng nguồn năng lượng, mỗi món đồ là một từ vựng mới giúp bạn luyện phát âm. Thu thập đủ để hoàn thành nhiệm vụ và giúp Pika tiếp tục hành trình nha!",
+
+        "Pika đang khám phá một trạm không gian bỏ hoang và không ổn định. Để tìm tọa độ dẫn đến Final Stage, cậu phải thu thập các bộ phận quan trọng từ các mảnh vỡ của trạm và kích hoạt lại hệ thống. Mỗi món đồ bạn thu thập là một từ vựng với âm tiên tiến, giúp bạn luyện phát âm phức tạp. Quyết tâm để khôi phục hệ thống và tiến xa hơn trong hành trình nào!",
+
+        "Pika đã đến được Eclipse Nexus, nơi giao thoa giữa các vũ trụ song song. Đây là cơ hội cuối cùng để Pika tìm được đường về nhà. Nhiệm vụ của bạn là thu thập các mảnh ghép năng lượng để mở cổng không gian cuối cùng. Mỗi mảnh ghép là một từ vựng cao cấp, giúp bạn hoàn thiện kỹ năng phát âm. Hãy nỗ lực để hoàn thành nhiệm vụ cuối cùng và đưa Pika trở về nhà!"
     ];
 
     // Stage name text
@@ -152,7 +170,15 @@ export class MainMenu extends Scene
         }).setOrigin(0.5).setDepth(100).setAlpha(0.8);
 
         // Thiết lập âm thanh cho game
+        console.log('Initializing audio system...');
         this.setupAudio();
+
+        // Kiểm tra lại trạng thái âm thanh sau khi thiết lập
+        if (this.backgroundMusic) {
+            console.log('Background music initialized:', this.backgroundMusic.key, 'Playing:', this.backgroundMusic.isPlaying);
+        } else {
+            console.warn('Background music not initialized properly');
+        }
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -265,7 +291,15 @@ export class MainMenu extends Scene
     {
         if (this.currentIndex > 0) {
             // Phát âm thanh khi chuyển stage
-            this.swipeSound.play();
+            try {
+                if (this.swipeSound && this.swipeSound.isPlaying) {
+                    this.swipeSound.stop();
+                }
+                this.swipeSound.play();
+                console.log('Playing swipe sound (prev)');
+            } catch (error) {
+                console.error('Error playing swipe sound:', error);
+            }
 
             this.currentIndex--;
             this.updateCarousel();
@@ -277,7 +311,15 @@ export class MainMenu extends Scene
     {
         if (this.currentIndex < this.stages.length - 1) {
             // Phát âm thanh khi chuyển stage
-            this.swipeSound.play();
+            try {
+                if (this.swipeSound && this.swipeSound.isPlaying) {
+                    this.swipeSound.stop();
+                }
+                this.swipeSound.play();
+                console.log('Playing swipe sound (next)');
+            } catch (error) {
+                console.error('Error playing swipe sound:', error);
+            }
 
             this.currentIndex++;
             this.updateCarousel();
@@ -293,25 +335,40 @@ export class MainMenu extends Scene
     // Thiết lập âm thanh cho game
     setupAudio()
     {
-        // Tạo nhạc nền
-        this.backgroundMusic = this.sound.add('music', {
-            volume: 0.5,
-            loop: true
-        });
+        console.log('Setting up audio...');
 
-        // Tạo âm thanh khi chuyển stage
-        this.swipeSound = this.sound.add('swipe', {
-            volume: 0.7
-        });
+        // Kiểm tra xem các file âm thanh có tồn tại không
+        console.log('Music asset exists:', this.cache.audio.exists('music'));
+        console.log('Swipe asset exists:', this.cache.audio.exists('swipe'));
+        console.log('Select asset exists:', this.cache.audio.exists('select'));
 
-        // Tạo âm thanh khi chọn
-        this.selectSound = this.sound.add('select', {
-            volume: 0.7
-        });
+        try {
+            // Tạo nhạc nền
+            this.backgroundMusic = this.sound.add('music', {
+                volume: 0.5,
+                loop: true
+            });
 
-        // Phát nhạc nền
-        if (!this.sound.get('music')?.isPlaying) {
-            this.backgroundMusic.play();
+            // Tạo âm thanh khi chuyển stage
+            this.swipeSound = this.sound.add('swipe', {
+                volume: 0.7
+            });
+
+            // Tạo âm thanh khi chọn
+            this.selectSound = this.sound.add('select', {
+                volume: 0.7
+            });
+
+            // Phát nhạc nền
+            if (!this.sound.get('music')?.isPlaying) {
+                console.log('Starting background music...');
+                this.backgroundMusic.play();
+            }
+
+            // Kiểm tra xem âm thanh có đang phát không
+            console.log('Background music is playing:', this.backgroundMusic.isPlaying);
+        } catch (error) {
+            console.error('Error setting up audio:', error);
         }
     }
 
@@ -412,14 +469,30 @@ export class MainMenu extends Scene
 
             if (index === this.currentIndex) {
                 // Phát âm thanh khi chọn
-                this.selectSound.play();
+                try {
+                    if (this.selectSound && this.selectSound.isPlaying) {
+                        this.selectSound.stop();
+                    }
+                    this.selectSound.play();
+                    console.log('Playing select sound (show video popup)');
+                } catch (error) {
+                    console.error('Error playing select sound:', error);
+                }
 
-                // Chỉ chuyển cảnh khi click vào stage ở giữa
-                console.log('Clicked on center stage, changing scene...');
-                this.changeScene();
+                // Hiển thị popup và phát video thay vì chuyển cảnh ngay lập tức
+                console.log('Clicked on center stage, showing video popup...');
+                this.showVideoPopup();
             } else {
                 // Phát âm thanh khi chuyển stage
-                this.swipeSound.play();
+                try {
+                    if (this.swipeSound && this.swipeSound.isPlaying) {
+                        this.swipeSound.stop();
+                    }
+                    this.swipeSound.play();
+                    console.log('Playing swipe sound (click on side stage)');
+                } catch (error) {
+                    console.error('Error playing swipe sound:', error);
+                }
 
                 // Nếu click vào stage khác, chuyển stage đó vào giữa
                 console.log('Clicked on side stage, moving it to center...');
@@ -452,7 +525,15 @@ export class MainMenu extends Scene
         // this.backgroundMusic.stop();
 
         // Phát âm thanh khi chọn
-        this.selectSound.play();
+        try {
+            if (this.selectSound && this.selectSound.isPlaying) {
+                this.selectSound.stop();
+            }
+            this.selectSound.play();
+            console.log('Playing select sound (change scene)');
+        } catch (error) {
+            console.error('Error playing select sound:', error);
+        }
 
         this.scene.start('Game');
     }
@@ -460,6 +541,173 @@ export class MainMenu extends Scene
     update()
     {
         // Có thể thêm logic cập nhật nếu cần
+    }
+
+    // Hiển thị popup và phát video
+    showVideoPopup()
+    {
+        // Nếu popup đã mở, không làm gì
+        if (this.isPopupOpen) return;
+
+        this.isPopupOpen = true;
+
+        // Lấy kích thước màn hình
+        const width = this.scale.width;
+        const height = this.scale.height;
+
+        // Tạo container cho popup
+        this.videoPopup = this.add.container(width / 2, height / 2);
+        this.videoPopup.setDepth(1000); // Đặt độ sâu cao nhất để hiển thị trên tất cả
+
+        // Tạo overlay màu đen mờ để làm nền cho popup
+        const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.8);
+        overlay.setOrigin(0.5);
+
+        // Tạo viền cho popup
+        const popupWidth = width * 0.9; // Tăng kích thước popup
+        const popupHeight = height * 0.9;
+        const border = this.add.rectangle(0, 0, popupWidth, popupHeight, 0x333333);
+        border.setOrigin(0.5);
+        border.setStrokeStyle(4, 0xffffff);
+
+        // Thêm tiêu đề cho popup
+        const title = this.add.text(0, -popupHeight / 2 + 40, `STAGE ${this.currentIndex + 1}: ${this.stageNames[this.currentIndex]}`, {
+            fontFamily: 'Arial Black',
+            fontSize: 28,
+            color: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        });
+        title.setOrigin(0.5);
+
+        // Tạo nút đóng
+        const closeButton = this.add.text(popupWidth / 2 - 30, -popupHeight / 2 + 30, 'X', {
+            fontFamily: 'Arial',
+            fontSize: 24,
+            color: '#ffffff'
+        });
+        closeButton.setOrigin(0.5);
+        closeButton.setInteractive({ useHandCursor: true });
+        closeButton.on('pointerdown', () => this.closeVideoPopup());
+
+        // Tạo nút play
+        const playButton = this.add.text(0, popupHeight / 2 - 40, 'START GAME', {
+            fontFamily: 'Arial Black',
+            fontSize: 32,
+            color: '#ffffff',
+            backgroundColor: '#ff0000',
+            padding: { left: 20, right: 20, top: 10, bottom: 10 },
+            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 2, stroke: true, fill: true }
+        });
+        playButton.setOrigin(0.5);
+        playButton.setInteractive({ useHandCursor: true });
+        playButton.on('pointerdown', () => this.changeScene());
+
+        // Tạo trình phát video tương ứng với stage hiện tại
+        const videoKey = `stage${this.currentIndex + 1}-video`;
+        // Kiểm tra xem texture video có tồn tại không, nếu không thì dùng video mặc định
+        const videoExists = this.textures.exists(videoKey);
+        this.videoPlayer = this.add.video(0, 0, videoKey ? videoKey : 'stage1-video');
+
+        // Log thông tin về video đang sử dụng
+        console.log(`Loading video for stage ${this.currentIndex + 1}: ${videoExists ? videoKey : 'stage1-video (fallback)'}`);
+
+        // Lấy kích thước gốc của video
+        const videoWidth = this.videoPlayer.width;
+        const videoHeight = this.videoPlayer.height;
+
+        // Tính toán tỷ lệ khung hình
+        const videoRatio = videoWidth / videoHeight;
+
+        // Tính toán không gian khả dụng trong popup (trừ đi khoảng trống cho tiêu đề, mô tả và nút)
+        const availableHeight = popupHeight - 350; // Trừ đi khoảng trống cho tiêu đề (80px), mô tả (150px) và nút play (120px)
+        const availableWidth = popupWidth - 80; // Trừ đi khoảng trống hai bên (40px mỗi bên)
+        const availableRatio = availableWidth / availableHeight;
+
+        // Điều chỉnh kích thước video để hiển thị đầy đủ mà không bị cắt
+        let finalWidth, finalHeight;
+
+        if (videoRatio > availableRatio) {
+            // Video rộng hơn không gian khả dụng
+            finalWidth = availableWidth;
+            finalHeight = finalWidth / videoRatio;
+        } else {
+            // Video cao hơn không gian khả dụng
+            finalHeight = availableHeight;
+            finalWidth = finalHeight * videoRatio;
+        }
+
+        // Đảm bảo video không vượt quá kích thước khả dụng
+        finalWidth = Math.min(finalWidth, availableWidth);
+        finalHeight = Math.min(finalHeight, availableHeight);
+
+        // Đặt video ở vị trí cao hơn một chút để tạo khoảng cách với tiêu đề và thấp hơn để có chỗ cho mô tả
+        this.videoPlayer.setPosition(0, -50);
+        this.videoPlayer.setDisplaySize(videoWidth, videoHeight);
+
+        // Tạo lớp phủ đen mờ cho phần mô tả
+        const textBg = this.add.rectangle(
+            0,
+            this.videoPlayer.y + (finalHeight / 2) + 50,
+            popupWidth - 60,
+            150,
+            0x000000,
+            0.7
+        );
+        textBg.setOrigin(0.5);
+
+        // Lấy mô tả tương ứng với stage hiện tại
+        const currentDescription = this.stageDescriptions[this.currentIndex];
+
+        // Thêm mô tả cho stage - đặt vị trí dựa vào vị trí video
+        const descriptionText = this.add.text(0, this.videoPlayer.y + (finalHeight / 2) + 50, currentDescription, {
+            fontFamily: 'Arial',
+            fontSize: 22,
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: popupWidth - 120 },
+            stroke: '#000000',
+            strokeThickness: 2,
+            shadow: { offsetX: 1, offsetY: 1, color: '#000000', blur: 2, stroke: true, fill: true }
+        });
+        descriptionText.setOrigin(0.5);
+
+        // Thêm các phần tử vào container
+        this.videoPopup.add([overlay, border, this.videoPlayer, textBg, closeButton, playButton, title, descriptionText]);
+
+        // Phát video
+        this.videoPlayer.play(true); // true = loop
+
+        // Thêm sự kiện click cho overlay để đóng popup
+        overlay.setInteractive();
+        overlay.on('pointerdown', (pointer) => {
+            // Chỉ đóng khi click vào overlay, không phải các phần tử khác trong popup
+            if (pointer.y < border.y - popupHeight / 2 ||
+                pointer.y > border.y + popupHeight / 2 ||
+                pointer.x < border.x - popupWidth / 2 ||
+                pointer.x > border.x + popupWidth / 2) {
+                this.closeVideoPopup();
+            }
+        });
+    }
+
+    // Đóng popup video
+    closeVideoPopup()
+    {
+        if (!this.isPopupOpen) return;
+
+        // Dừng video
+        if (this.videoPlayer) {
+            this.videoPlayer.stop();
+        }
+
+        // Xóa popup
+        if (this.videoPopup) {
+            this.videoPopup.destroy();
+            this.videoPopup = null;
+        }
+
+        this.isPopupOpen = false;
     }
 
     // Phương thức thay đổi background theo chặng sử dụng kỹ thuật crossfade
