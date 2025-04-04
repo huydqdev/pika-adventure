@@ -61,6 +61,12 @@ export class Preloader extends Scene
         this.load.video('stage4-video', 'videos/stage4.mp4');
         this.load.video('stage5-video', 'videos/stage5.mp4');
 
+        this.load.image('stage1', 'stage 1.png');
+        this.load.image('stage2', 'stage 2.png');
+        this.load.image('stage3', 'stage 3.png');
+        this.load.image('stage4', 'stage 4.png');
+        this.load.image('stage5', 'stage 5.png');
+
         this.load.image('cap-item', 'game1/cap_item.png');
         this.load.image('switch-item', 'game1/switch_item.png');
         this.load.image('tool-item', 'game1/tool_item.png');
