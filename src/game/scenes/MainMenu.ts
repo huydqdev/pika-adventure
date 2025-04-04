@@ -521,21 +521,43 @@ export class MainMenu extends Scene
             this.tweens.killTweensOf(stage);
         });
 
-        // Dừng nhạc nền (hoặc có thể để tiếp tục phát trong cảnh tiếp theo)
-        // this.backgroundMusic.stop();
-
-        // Phát âm thanh khi chọn
-        try {
-            if (this.selectSound && this.selectSound.isPlaying) {
-                this.selectSound.stop();
-            }
-            this.selectSound.play();
-            console.log('Playing select sound (change scene)');
-        } catch (error) {
-            console.error('Error playing select sound:', error);
+        // Dừng tất cả âm thanh
+        if (this.backgroundMusic) {
+            this.backgroundMusic.stop();
+        }
+        if (this.swipeSound) {
+            this.swipeSound.stop();
+        }
+        if (this.selectSound) {
+            this.selectSound.stop();
         }
 
-        this.scene.start('Game');
+        // Dừng video nếu đang phát
+        if (this.videoPlayer && this.videoPlayer.isPlaying()) {
+            this.videoPlayer.stop();
+        }
+
+        // Đóng popup video nếu đang mở
+        if (this.isPopupOpen) {
+            this.closeVideoPopup();
+        }
+
+        console.log('All audio stopped before changing scene');
+
+        // Phát âm thanh khi chọn và chuyển cảnh
+        try {
+            this.selectSound.play();
+            console.log('Playing select sound (change scene)');
+
+            // Sử dụng delayedCall để đảm bảo âm thanh được phát trước khi chuyển cảnh
+            this.time.delayedCall(300, () => {
+                this.scene.start('Game');
+            });
+        } catch (error) {
+            console.error('Error playing select sound:', error);
+            // Nếu có lỗi vẫn chuyển cảnh
+            this.scene.start('Game');
+        }
     }
 
     update()
@@ -698,7 +720,13 @@ export class MainMenu extends Scene
 
         // Dừng video
         if (this.videoPlayer) {
-            this.videoPlayer.stop();
+            try {
+                if (this.videoPlayer.isPlaying()) {
+                    this.videoPlayer.stop();
+                }
+            } catch (error) {
+                console.error('Error stopping video:', error);
+            }
         }
 
         // Xóa popup
@@ -708,6 +736,7 @@ export class MainMenu extends Scene
         }
 
         this.isPopupOpen = false;
+        console.log('Video popup closed');
     }
 
     // Phương thức thay đổi background theo chặng sử dụng kỹ thuật crossfade
