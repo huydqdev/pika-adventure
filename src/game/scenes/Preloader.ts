@@ -32,35 +32,34 @@ export class Preloader extends Scene
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
 
-        console.log('Preloader: Loading assets...');
-
+        // Load image assets
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
-        this.load.image('stage1', 'stage 1.png');
-        this.load.image('stage2', 'stage 2.png');
-        this.load.image('stage3', 'stage 3.png');
-        this.load.image('stage4', 'stage 4.png');
-        this.load.image('stage5', 'stage 5.png');
 
         // game 1 assets
         this.load.image('amp-item', 'game1/amp_item.png');
-        this.load.image('nut-item', 'game1/plug_item.png');
+        this.load.image('nut-item', 'game1/nut_item.png');
         this.load.image('spark-item', 'game1/spark_item.png');
         this.load.image('plug-item', 'game1/plug_item.png');
-        
-        // Tải các background cho từng chặng
-        this.load.image('bg1', 'bg1.jpg');
-        this.load.image('bg2', 'bg2.jpg');
-        this.load.image('bg3', 'bg3.jpg');
-        this.load.image('bg4', 'bg4.jpg');
-        this.load.image('bg5', 'bg5.jpg');
+        this.load.image('cap-item', 'game1/cap_item.png');
+        this.load.image('switch-item', 'game1/switch_item.png');
+        this.load.image('tool-item', 'game1/tool_item.png');
+        this.load.image('background_1', 'game1/background_1.png');
 
+        // game 1 icons
+        this.load.image('balo-ic', 'game1/balo_ic.png');
+        this.load.image('guide-ic', 'game1/guide_ic.png');
+        this.load.image('volume-ic', 'game1/volume_ic.png');
+        this.load.image('back-ic', 'game1/back_ic.png');
+
+        this.load.image('idle-player', 'game1/player/idle.png');
+        this.load.image('walk-player', 'game1/player/walk.png');
         // Load audio assets from audio directory
         this.load.setPath('audio');
-
+        
         // Load utility sounds
         this.load.audio('click', 'utils/click.mp3');
-
+        
         // Load vocabulary word sounds
         this.load.setPath('audio');
         // game 1
@@ -68,24 +67,15 @@ export class Preloader extends Scene
         this.load.audio('nut-word-audio', 'game1/words/nut.mp3');
         this.load.audio('spark-word-audio', 'game1/words/spark.mp3');
         this.load.audio('plug-word-audio', 'game1/words/plug.mp3');
-
-
+        this.load.audio('cap-word-audio', 'game1/words/cap.mp3');
+        this.load.audio('switch-word-audio', 'game1/words/switch.mp3');
+        this.load.audio('tool-word-audio', 'game1/words/tool.mp3');
 
         // load utils sound
         this.load.audio('click', 'utils/click.mp3');
         this.load.audio('correct', 'utils/correct.mp3');
         this.load.audio('wrong', 'utils/wrong.mp3');
         this.load.audio('adventure-bg', 'utils/adventure_bg.mp3');
-        
-        // Thêm sự kiện để kiểm tra khi tải xong
-        this.load.on('complete', () => {
-            console.log('Preloader: All assets loaded successfully');
-            console.log('stage1 texture exists:', this.textures.exists('stage1'));
-            console.log('stage2 texture exists:', this.textures.exists('stage2'));
-            console.log('stage3 texture exists:', this.textures.exists('stage3'));
-            console.log('stage4 texture exists:', this.textures.exists('stage4'));
-            console.log('stage5 texture exists:', this.textures.exists('stage5'));
-        });
     }
 
     create ()
@@ -94,6 +84,6 @@ export class Preloader extends Scene
         //  For example, you can define global animations here, so we can use them in other scenes.
 
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
+        this.scene.start('Game');
     }
 }
