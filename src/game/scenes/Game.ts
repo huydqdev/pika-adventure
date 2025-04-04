@@ -41,24 +41,27 @@ export class Game extends Scene
     path: Phaser.Curves.Path;
     hubButtons: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image)[] = [];
     popup: Phaser.GameObjects.Container | undefined;
-    pathSquares: Phaser.GameObjects.Rectangle[] = []; // Array to store the squares
-    playerCircle: Phaser.GameObjects.Arc; // Red circle representing player position
+    pathSquares: Phaser.GameObjects.Image[] = []; // Array to store the path nodes
+    playerCircle: Phaser.GameObjects.Image; // Player sprite instead of circle
+    isPlayerMoving: boolean = false; // Track if player is moving
     collectedItems: {color: number, index: number, word: string}[] = []; // Array to store collected items
     continueButton: Phaser.GameObjects.Rectangle; // Button to continue after completion
     
     // Sound effects
     clickSound: Phaser.Sound.BaseSound;
     wordSounds: Map<string, Phaser.Sound.BaseSound> = new Map();
+    backgroundMusic: Phaser.Sound.BaseSound; // Background music
+    isMuted: boolean = false; // Flag to track if audio is muted
     
     // Vocabulary list for the squares on the curve
     vocabularyWords: { word: string, description: string, audio: string, image: string }[] = [
-        { word: "Amp", description: "A unit used to measure electric current", audio: 'amp-word-audio', image: 'amp.png' },
-        { word: "Nut", description: "A small piece of metal with a threaded hole", audio: 'nut-word-audio', image: 'nut.png' },
-        { word: "Plug", description: "To draw or drag something towards oneself", audio: 'plug-word-audio', image: 'plug.png' },
-        { word: "Spark", description: "A small fiery particle thrown off from a fire", audio: 'spark-word-audio', image: 'spark.png' },
-        { word: "Nut", description: "A small piece of metal with a threaded hole", audio: 'nut-word-audio', image: 'nut.png' },
-        { word: "Plug", description: "To draw or drag something towards oneself", audio: 'plug-word-audio', image: 'plug.png' },
-        { word: "Spark", description: "A small fiery particle thrown off from a fire", audio: 'spark-word-audio', image: 'spark.png' },
+        { word: "Amp", description: "A unit used to measure electric current", audio: 'amp-word-audio', image: 'amp-item' },
+        { word: "Nut", description: "A small piece of metal with a threaded hole", audio: 'nut-word-audio', image: 'nut-item' },
+        { word: "Plug", description: "To draw or drag something towards oneself", audio: 'plug-word-audio', image: 'plug-item' },
+        { word: "Spark", description: "A small fiery particle thrown off from a fire", audio: 'spark-word-audio', image: 'spark-item' },
+        { word: "Tool", description: "A small piece of metal with a threaded hole", audio: 'tool-word-audio', image: 'tool-item' },
+        { word: "Cap", description: "A small piece of metal with a threaded hole", audio: 'cap-word-audio', image: 'cap-item' },
+        { word: "Switch", description: "A device that opens or closes an electrical circuit", audio: 'switch-word-audio', image: 'switch-item' },
     ];
     
     // Speech recognition support
@@ -78,6 +81,10 @@ export class Game extends Scene
         // Initialize sounds
         this.clickSound = this.sound.add('click');
         
+        // Initialize and play background music
+        this.backgroundMusic = this.sound.add('adventure-bg', { loop: true, volume: 0.5 });
+        this.backgroundMusic.play();
+        
         // Add word sounds to map for easy access
         this.vocabularyWords.forEach(word => {
             const soundKey = word.audio;
@@ -85,11 +92,23 @@ export class Game extends Scene
         });
         
         this.camera = this.cameras.main;
-        this.camera.setBackgroundColor('#ffffff');
-
-        // Get the actual game width and height to make the curve responsive
+        // Replace background color with background image
+        // this.camera.setBackgroundColor('#ffffff');
+        
+        // Add background image
         const gameWidth = this.cameras.main.width;
         const gameHeight = this.cameras.main.height;
+        const background = this.add.image(gameWidth / 2, gameHeight / 2, 'background_1');
+        
+        // Scale the background to cover the entire screen
+        background.setDisplaySize(gameWidth, gameHeight);
+        
+        // Set the depth to ensure it's behind everything else
+        background.setDepth(-1);
+
+        // Get the actual game width and height to make the curve responsive
+        // const gameWidth = this.cameras.main.width;
+        // const gameHeight = this.cameras.main.height;
 
         // Define start (top-left) and end (bottom-right) using relative positioning
         const startX = gameWidth * 0.1;  // 10% from left edge
@@ -115,18 +134,28 @@ export class Game extends Scene
             gameWidth * 0.01, endY             // Control point 2 - helps curve right
         );
         
-        // Draw the curve
+        // Draw the curve with dashed line and lighter color
         const graphics = this.add.graphics();
-        graphics.lineStyle(4, 0x0088ff);
-        this.path.draw(graphics);
         
-        // Add a red circle at the start of the curve as player position indicator
-        this.playerCircle = this.add.circle(startX, startY, 10, 0xff0000);
+        // Set line style with a lighter blue color (0x99ccff instead of 0x0088ff)
+        // and add dash effect
+        graphics.lineStyle(4, 0x99ccff, 1);
+        
+        // Use a custom method to draw the dashed path
+        this.drawDashedPath(graphics, this.path, 10, 5); // dash length 10, gap length 5
+        
+        // Define a Y-offset to position player above the path
+        const playerYOffset = -40; // Negative value to shift upward
+        
+        // Add a player sprite at the start of the curve, shifted upward
+        this.playerCircle = this.add.image(startX, startY + playerYOffset, 'idle-player');
+        // Set appropriate size for the player sprite
+        this.playerCircle.setDisplaySize(60, 100);
         this.playerCircle.setDepth(100); // Make sure it's above the squares
         
         // Add 7 squares evenly distributed along the path
         const colors = [0xff4800, 0xffff00, 0x00ff00, 0x00ffff, 0x0088ff, 0x8800ff, 0xff00ff];
-        const squareSize = Math.min(gameWidth, gameHeight) * 0.02; // Responsive square size
+        const squareSize = Math.min(gameWidth, gameHeight) * 0.1; // Increased size (was 0.02)
         
         for (let i = 0; i < 7; i++) {
             // Calculate position (0 to 1) along the path
@@ -135,28 +164,33 @@ export class Game extends Scene
             // Get point at this position
             const point = this.path.getPoint(t);
             
-            // Create interactive square at this point
-            const square = this.add.rectangle(
+            // Create interactive square at this point using image instead of rectangle
+            const square = this.add.image(
                 point.x, 
                 point.y,
-                squareSize, 
-                squareSize,
-                colors[i]
+                this.vocabularyWords[i].image
             );
+            
+            // Set display size to match the intended square size
+            square.setDisplaySize(squareSize, squareSize);
+            
+            // Add color data for compatibility with existing code
+            square.setData('fillColor', colors[i]);
             
             // Initially, only the first square is available, others are locked
             if (i === 0) {
                 square.setData('state', 'AVAILABLE');
-                square.setAlpha(1);
                 // Make it interactive
                 square.setInteractive({ useHandCursor: true });
                 square.on('pointerdown', () => {
                     this.clickSound.play(); // Play click sound
-                    this.showSquarePopup(square, colors[i]);
+                    this.showSquarePopup(square);
                 });
             } else {
                 square.setData('state', 'LOCK');
-                square.setAlpha(0.5); // Dimmed to indicate locked
+                // Apply visual effect to indicate locked state
+                // square.setAlpha(0.5); // Remove opacity/dim effect
+                square.setTint(0x888888); // Keep gray tint to indicate locked
             }
             
             // Store the square's index for easy reference
@@ -164,6 +198,9 @@ export class Game extends Scene
             
             // Store the square in our array
             this.pathSquares.push(square);
+            
+            // Add floating animation to make it look like floating on water
+            this.addFloatingAnimation(square);
         }
 
         // Create HUB buttons
@@ -234,22 +271,20 @@ export class Game extends Scene
     setupButton(button: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle) {
         button.setInteractive({ useHandCursor: true });
         
-        button.on('pointerover', () => {
-            this.tweens.add({
-                targets: button,
-                scaleX: 0.3,
-                scaleY: 0.3,
-                duration: 100
-            });
-        });
+        // button.on('pointerover', () => {});
         
-        button.on('pointerout', () => {});
+        // button.on('pointerout', () => {});
         
         button.on('pointerdown', () => {
             this.clickSound.play(); // Play click sound
             
             // Add a small scale animation when clicked
-            // this.tweens.add({});
+            // this.tweens.add({
+            //     targets: button,
+            //     scale: { from: 1, to: 1.2 },
+            //     duration: 100,
+            //     yoyo: true
+            // });
             
             const buttonType = button.getData('buttonType');
             console.log(`Button clicked: ${buttonType}`);
@@ -259,9 +294,49 @@ export class Game extends Scene
                 this.showIntroPopup();
             } else if (buttonType === 'balo') {
                 this.showCollectionsPopup();
+            } else if (buttonType === 'volume') {
+                this.toggleAudio(button);
+            } else if (buttonType === 'back') {
+                // Navigate back to MainMenu scene with a transition
+                this.cameras.main.fadeOut(500);
+                
+                this.time.delayedCall(500, () => {
+                    // Stop any ongoing game processes if necessary
+                    if (this.backgroundMusic) {
+                        this.backgroundMusic.stop();
+                    }
+                    
+                    // Navigate to MainMenu scene
+                    this.scene.start('MainMenu');
+                });
             }
             // Add other button type handlers here
         });
+    }
+
+    // Toggle all game audio (background music and sound effects)
+    toggleAudio(button: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle) {
+        this.isMuted = !this.isMuted;
+        
+        if (this.isMuted) {
+            // Mute all audio
+            this.sound.setMute(true);
+            // Visual indicator that sound is off
+            if (button instanceof Phaser.GameObjects.Image) {
+                button.setTint(0x888888);
+            } else if (button instanceof Phaser.GameObjects.Rectangle) {
+                button.fillColor = 0x888888;
+            }
+        } else {
+            // Unmute all audio
+            this.sound.setMute(false);
+            // Return button to normal appearance
+            if (button instanceof Phaser.GameObjects.Image) {
+                button.clearTint();
+            } else if (button instanceof Phaser.GameObjects.Rectangle) {
+                button.fillColor = 0xFFFFFF; // Reset to white or original color
+            }
+        }
     }
 
     handleResize() {
@@ -300,20 +375,47 @@ export class Game extends Scene
         });
         this.popup.add(background);
         
-        // Add popup background
-        const popupBg = this.add.rectangle(
-            0, 0,
-            popupWidth, popupHeight,
-            0xffffff, 1
+        // Add popup background with rounded corners
+        const borderRadius = 20; // Radius for the rounded corners
+        const popupGraphics = this.add.graphics();
+        
+        // Draw the fill (white background)
+        popupGraphics.fillStyle(0xffffff, 1);
+        popupGraphics.fillRoundedRect(
+            -popupWidth / 2, 
+            -popupHeight / 2, 
+            popupWidth, 
+            popupHeight, 
+            borderRadius
         );
-        popupBg.setStrokeStyle(4, 0x000000);
+        
+        // Draw the stroke (black border)
+        popupGraphics.lineStyle(4, 0x000000);
+        popupGraphics.strokeRoundedRect(
+            -popupWidth / 2, 
+            -popupHeight / 2, 
+            popupWidth, 
+            popupHeight, 
+            borderRadius
+        );
+        
+        // Make the graphics interactive
+        popupGraphics.setInteractive(
+            new Phaser.Geom.Rectangle(
+                -popupWidth / 2, 
+                -popupHeight / 2, 
+                popupWidth, 
+                popupHeight
+            ),
+            Phaser.Geom.Rectangle.Contains
+        );
+        
         // Stop propagation for clicks on the popup itself
-        popupBg.setInteractive();
-        popupBg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            // this.clickSound.play(); // Play click sound
+        popupGraphics.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             pointer.event.stopPropagation();
         });
-        this.popup.add(popupBg);
+        
+        this.popup.add(popupGraphics);
         
         // Add title text
         const titleText = this.add.text(
@@ -367,7 +469,7 @@ export class Game extends Scene
         }
     }
 
-    showSquarePopup(square: Phaser.GameObjects.Rectangle, color: number) {
+    showSquarePopup(square: Phaser.GameObjects.Image) {
         // Remove existing popup if there is one
         if (this.popup) {
             this.popup.destroy();
@@ -397,20 +499,48 @@ export class Game extends Scene
         });
         this.popup.add(background);
         
-        // Add popup background
-        const popupBg = this.add.rectangle(
-            0, 0,
-            popupWidth, popupHeight,
-            0xffffff, 1
+        // Add popup background with rounded corners using graphics
+        const borderRadius = 20; // Radius for the rounded corners
+        const popupGraphics = this.add.graphics();
+        
+        // Draw the fill (white background)
+        popupGraphics.fillStyle(0xffffff, 1);
+        popupGraphics.fillRoundedRect(
+            -popupWidth / 2, 
+            -popupHeight / 2, 
+            popupWidth, 
+            popupHeight, 
+            borderRadius
         );
-        popupBg.setStrokeStyle(4, 0x000000);
+        
+        // Draw the stroke (black border)
+        popupGraphics.lineStyle(4, 0x000000);
+        popupGraphics.strokeRoundedRect(
+            -popupWidth / 2, 
+            -popupHeight / 2, 
+            popupWidth, 
+            popupHeight, 
+            borderRadius
+        );
+        
+        // Make the graphics interactive
+        popupGraphics.setInteractive(
+            new Phaser.Geom.Rectangle(
+                -popupWidth / 2, 
+                -popupHeight / 2, 
+                popupWidth, 
+                popupHeight
+            ),
+            Phaser.Geom.Rectangle.Contains
+        );
+        
         // Stop propagation for clicks on the popup itself
-        popupBg.setInteractive();
-        popupBg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            // this.clickSound.play(); // Play click sound
+        popupGraphics.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            // this.clickSound.play();
             pointer.event.stopPropagation();
         });
-        this.popup.add(popupBg);
+        
+        this.popup.add(popupGraphics);
         
         // Get the current word based on square index
         const squareIndex = square.getData('index');
@@ -433,8 +563,9 @@ export class Game extends Scene
             this.playWordSound(vocabItem.word);
         });
         
-        // Add sprite in the middle (using a rectangle with the same color as the square for now)
-        const sprite = this.add.rectangle(0, -popupHeight * 0.15, 100, 100, color);
+        // Add sprite in the middle (using the image from vocabularyWords)
+        const sprite = this.add.image(0, -popupHeight * 0.15, vocabItem.image);
+        sprite.setDisplaySize(100, 100); // Set consistent size
         sprite.setName('itemSprite'); // Give it a name to reference later
         this.popup.add(sprite);
         
@@ -523,77 +654,31 @@ export class Game extends Scene
         });
     }
     
-    animateSprite(sprite: Phaser.GameObjects.Rectangle) {
+    animateSprite(sprite: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle) {
         // Stop any existing animations on this sprite
         this.tweens.killTweensOf(sprite);
         
-        // Create a sequence of animations
+        // Save original scale
+        const originalScaleX = sprite.scaleX || 1;
+        const originalScaleY = sprite.scaleY || 1;
         
-        // 1. Shake animation
+        // Create a subtle scaling animation
         this.tweens.add({
             targets: sprite,
-            x: { from: sprite.x - 5, to: sprite.x + 5 },
-            duration: 50,
-            yoyo: true,
-            repeat: 7,
+            scaleX: originalScaleX * 1.05, // Very small scale increase (only 5%)
+            scaleY: originalScaleY * 1.05, // Very small scale increase (only 5%)
+            duration: 150,
+            yoyo: true, // Return to original scale
+            repeat: 2, // Repeat the animation twice (3 total pulses)
+            ease: 'Sine.easeInOut',
             onComplete: () => {
-                // Reset position
-                sprite.x = 0;
-                
-                // 2. Scale animation
-                this.tweens.add({
-                    targets: sprite,
-                    scaleX: { from: 1, to: 1.3 },
-                    scaleY: { from: 1, to: 1.3 },
-                    duration: 200,
-                    yoyo: true,
-                    ease: 'Sine.easeInOut',
-                    onComplete: () => {
-                        // 3. Rotate animation
-                        this.tweens.add({
-                            targets: sprite,
-                            angle: 360,
-                            duration: 500,
-                            ease: 'Cubic.easeInOut',
-                            onComplete: () => {
-                                // 4. Bounce animation
-                                this.tweens.add({
-                                    targets: sprite,
-                                    y: { from: sprite.y, to: sprite.y - 30 },
-                                    duration: 300,
-                                    yoyo: true,
-                                    ease: 'Bounce.easeOut',
-                                    repeat: 1
-                                });
-                            }
-                        });
-                    }
-                });
+                // Ensure we return to the exact original scale
+                sprite.setScale(originalScaleX, originalScaleY);
             }
-        });
-        
-        // Add a particle effect
-        const particles = this.add.particles(sprite.x, sprite.y, 'particle', {
-            speed: 100,
-            scale: { start: 0.5, end: 0 },
-            blendMode: 'ADD',
-            lifespan: 500,
-            quantity: 1,
-            frequency: 50
-        });
-        
-        // Add particles to the popup so they move with it
-        if (this.popup) {
-            this.popup.add(particles);
-        }
-        
-        // Stop particles after 1 second
-        this.time.delayedCall(1000, () => {
-            particles.destroy();
         });
     }
     
-    collectItemAnimation(sprite: Phaser.GameObjects.Rectangle, originalSquare: Phaser.GameObjects.Rectangle) {
+    collectItemAnimation(sprite: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle, originalSquare: Phaser.GameObjects.Image) {
         // Find the collections button (bottom-left button)
         const collectionsButton = this.hubButtons.find(button => 
             button.getData('buttonType') === 'balo'
@@ -601,15 +686,17 @@ export class Game extends Scene
         
         if (!collectionsButton || !this.popup) return;
         
+        // Get the index of the current square
+        const currentIndex = originalSquare.getData('index');
+        
         // Create a copy of the sprite to animate outside the popup
         const spriteWorldPos = this.popup.getWorldTransformMatrix().transformPoint(sprite.x, sprite.y);
-        const flyingSprite = this.add.rectangle(
+        const flyingSprite = this.add.image(
             spriteWorldPos.x, 
             spriteWorldPos.y,
-            sprite.width, 
-            sprite.height,
-            sprite.fillColor
+            this.vocabularyWords[currentIndex].image
         );
+        flyingSprite.setDisplaySize(sprite.width, sprite.height);
         flyingSprite.setDepth(2000);
         
         // Stop speech recognition
@@ -621,14 +708,14 @@ export class Game extends Scene
         // Set the current square to UNLOCK state
         originalSquare.setData('state', 'UNLOCK');
         originalSquare.setVisible(true); // Show it again
+        // For images, apply a visual effect to show it's been completed
         originalSquare.setAlpha(0.7); // Slightly dimmed to indicate completed
-        
-        // Get the index of the current square
-        const currentIndex = originalSquare.getData('index');
+        // You could also add a tint as an alternative visual indicator
+        originalSquare.setTint(0xdddddd); // Apply a slight gray tint
         
         // Add to collected items including the word
         this.collectedItems.push({
-            color: originalSquare.fillColor,
+            color: originalSquare.getData('fillColor'),
             index: currentIndex,
             word: this.vocabularyWords[currentIndex].word
         });
@@ -640,13 +727,15 @@ export class Game extends Scene
         if (!isLastItem) {
             const nextSquare = this.pathSquares[currentIndex + 1];
             nextSquare.setData('state', 'AVAILABLE');
-            nextSquare.setAlpha(1); // Fully visible
+            
+            // Change appearance to show it's available
+            nextSquare.setAlpha(1); // Ensure full opacity
+            nextSquare.clearTint(); // Remove the gray tint
             
             // Make the next square interactive
             nextSquare.setInteractive({ useHandCursor: true });
             nextSquare.on('pointerdown', () => {
-                const nextColor = nextSquare.fillColor;
-                this.showSquarePopup(nextSquare, nextColor);
+                this.showSquarePopup(nextSquare);
             });
         }
         
@@ -692,20 +781,29 @@ export class Game extends Scene
             const nextSquare = this.pathSquares[currentIndex + 1];
             
             // Get the normalized path position of the next square
-            const nextT = (currentIndex + 1) / 6;
+            const nextT = (currentIndex + 1) / (this.vocabularyWords.length - 1);
             
             // Create a small path segment for this movement
             const points: Phaser.Math.Vector2[] = [];
             const steps = 20; // Number of points to sample for smooth movement
             
             // Calculate the current position in the overall path
-            const currentT = currentIndex / 6;
+            const currentT = currentIndex / (this.vocabularyWords.length - 1);
+            
+            // Define a Y-offset to position player above the path
+            const playerYOffset = -40; // Negative value to shift upward
             
             // Sample points between current and next position
             for (let i = 0; i <= steps; i++) {
                 const t = currentT + (nextT - currentT) * (i / steps);
-                points.push(this.path.getPoint(t));
+                const pathPoint = this.path.getPoint(t);
+                // Create a new point with Y-offset for the player
+                points.push(new Phaser.Math.Vector2(pathPoint.x, pathPoint.y + playerYOffset));
             }
+            
+            // Change to walking sprite before movement starts
+            this.playerCircle.setTexture('walk-player');
+            this.isPlayerMoving = true;
             
             // Animate the player along these points
             let pointIndex = 0;
@@ -715,14 +813,30 @@ export class Game extends Scene
                 delay: 1000 / steps, // Total animation time: 1 second
                 callback: () => {
                     if (pointIndex < points.length) {
+                        // Calculate direction for sprite flipping
+                        if (pointIndex > 0) {
+                            const prevPoint = points[pointIndex - 1];
+                            const currentPoint = points[pointIndex];
+                            // Flip the sprite based on horizontal movement direction
+                            if (currentPoint.x < prevPoint.x) {
+                                this.playerCircle.setFlipX(true); // Moving left
+                            } else if (currentPoint.x > prevPoint.x) {
+                                this.playerCircle.setFlipX(false); // Moving right
+                            }
+                        }
+                        
                         this.playerCircle.setPosition(points[pointIndex].x, points[pointIndex].y);
                         pointIndex++;
                     } else {
                         timer.destroy();
                         
+                        // Change back to idle sprite when movement completes
+                        this.playerCircle.setTexture('idle-player');
+                        this.isPlayerMoving = false;
+                        
                         // After the player arrives at the next square, show its popup
                         this.time.delayedCall(300, () => {
-                            this.showSquarePopup(nextSquare, nextSquare.fillColor);
+                            this.showSquarePopup(nextSquare);
                         });
                     }
                 },
@@ -758,20 +872,48 @@ export class Game extends Scene
         });
         this.popup.add(background);
         
-        // Add popup background
-        const popupBg = this.add.rectangle(
-            0, 0,
-            popupWidth, popupHeight,
-            0xffffff, 1
+        // Add popup background with rounded corners
+        const borderRadius = 20; // Radius for the rounded corners
+        const popupGraphics = this.add.graphics();
+        
+        // Draw the fill (white background)
+        popupGraphics.fillStyle(0xffffff, 1);
+        popupGraphics.fillRoundedRect(
+            -popupWidth / 2, 
+            -popupHeight / 2, 
+            popupWidth, 
+            popupHeight, 
+            borderRadius
         );
-        popupBg.setStrokeStyle(4, 0x000000);
+        
+        // Draw the stroke (black border)
+        popupGraphics.lineStyle(4, 0x000000);
+        popupGraphics.strokeRoundedRect(
+            -popupWidth / 2, 
+            -popupHeight / 2, 
+            popupWidth, 
+            popupHeight, 
+            borderRadius
+        );
+        
+        // Make the graphics interactive
+        popupGraphics.setInteractive(
+            new Phaser.Geom.Rectangle(
+                -popupWidth / 2, 
+                -popupHeight / 2, 
+                popupWidth, 
+                popupHeight
+            ),
+            Phaser.Geom.Rectangle.Contains
+        );
+        
         // Stop propagation for clicks on the popup itself
-        popupBg.setInteractive();
-        popupBg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        popupGraphics.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             this.clickSound.play(); // Play click sound
             pointer.event.stopPropagation();
         });
-        this.popup.add(popupBg);
+        
+        this.popup.add(popupGraphics);
         
         // Add title text
         const titleText = this.add.text(
@@ -818,8 +960,9 @@ export class Game extends Scene
                     this.popup.add(itemBg);
                 }
                 
-                // Add the item sprite (using rectangle for now)
-                const itemSprite = this.add.rectangle(x, y, itemSize * 0.7, itemSize * 0.7, item.color);
+                // Add the item sprite (using the image from vocabularyWords)
+                const itemSprite = this.add.image(x, y, this.vocabularyWords[item.index].image);
+                itemSprite.setDisplaySize(itemSize * 0.7, itemSize * 0.7);
                 if (this.popup) {
                     this.popup.add(itemSprite);
                 }
@@ -903,20 +1046,48 @@ export class Game extends Scene
         });
         this.popup.add(background);
         
-        // Add popup background
-        const popupBg = this.add.rectangle(
-            0, 0,
-            popupWidth, popupHeight,
-            0xffffff, 1
+        // Add popup background with rounded corners
+        const borderRadius = 20; // Radius for the rounded corners
+        const popupGraphics = this.add.graphics();
+        
+        // Draw the fill (white background)
+        popupGraphics.fillStyle(0xffffff, 1);
+        popupGraphics.fillRoundedRect(
+            -popupWidth / 2, 
+            -popupHeight / 2, 
+            popupWidth, 
+            popupHeight, 
+            borderRadius
         );
-        popupBg.setStrokeStyle(4, 0x000000);
+        
+        // Draw the stroke (black border)
+        popupGraphics.lineStyle(4, 0x000000);
+        popupGraphics.strokeRoundedRect(
+            -popupWidth / 2, 
+            -popupHeight / 2, 
+            popupWidth, 
+            popupHeight, 
+            borderRadius
+        );
+        
+        // Make the graphics interactive
+        popupGraphics.setInteractive(
+            new Phaser.Geom.Rectangle(
+                -popupWidth / 2, 
+                -popupHeight / 2, 
+                popupWidth, 
+                popupHeight
+            ),
+            Phaser.Geom.Rectangle.Contains
+        );
+        
         // Stop propagation for clicks on the popup itself
-        popupBg.setInteractive();
-        popupBg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        popupGraphics.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             this.clickSound.play(); // Play click sound
             pointer.event.stopPropagation();
         });
-        this.popup.add(popupBg);
+        
+        this.popup.add(popupGraphics);
         
         // Add title text
         const titleText = this.add.text(
@@ -1198,5 +1369,123 @@ export class Game extends Scene
         } else {
             console.warn(`Sound for word "${word}" not found`);
         }
+    }
+    
+    // Draw a path with dashed line
+    drawDashedPath(graphics: Phaser.GameObjects.Graphics, path: Phaser.Curves.Path, dashLength: number, gapLength: number) {
+        // Get a high number of points to approximate the curve smoothly
+        const points = path.getPoints(300);
+        
+        // Start at the first point
+        let currentX = points[0].x;
+        let currentY = points[0].y;
+        
+        // Variable to track if we're currently drawing a dash or in a gap
+        let drawing = true;
+        // Track the distance along the current dash or gap
+        let currentDist = 0;
+        
+        // For each point after the first
+        for (let i = 1; i < points.length; i++) {
+            const point = points[i];
+            
+            // Calculate the distance to the next point
+            const dx = point.x - currentX;
+            const dy = point.y - currentY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // If the distance is very small, skip ahead
+            if (dist < 0.5) continue;
+            
+            // Calculate the normalized direction
+            const nx = dx / dist;
+            const ny = dy / dist;
+            
+            // The distance we can still travel in the current dash or gap
+            let remainingDist = drawing ? dashLength - currentDist : gapLength - currentDist;
+            
+            // If we can't reach the next point in the current dash/gap
+            if (dist < remainingDist) {
+                // Draw the line segment if we're in a dash
+                if (drawing) {
+                    graphics.lineBetween(currentX, currentY, point.x, point.y);
+                }
+                
+                // Update current position and the distance in the current dash/gap
+                currentX = point.x;
+                currentY = point.y;
+                currentDist += dist;
+            } else {
+                // We'll reach the end of the current dash/gap before the next point
+                while (dist > remainingDist) {
+                    // Move along the line by the remaining distance
+                    const nextX = currentX + nx * remainingDist;
+                    const nextY = currentY + ny * remainingDist;
+                    
+                    // Draw if we're in a dash
+                    if (drawing) {
+                        graphics.lineBetween(currentX, currentY, nextX, nextY);
+                    }
+                    
+                    // Update position
+                    currentX = nextX;
+                    currentY = nextY;
+                    
+                    // Reduce the remaining distance
+                    dist -= remainingDist;
+                    
+                    // Switch between dash and gap
+                    drawing = !drawing;
+                    
+                    // Reset the current distance
+                    currentDist = 0;
+                    
+                    // Set the new remaining distance based on dash or gap
+                    remainingDist = drawing ? dashLength : gapLength;
+                }
+                
+                // Draw any remaining portion
+                if (dist > 0) {
+                    const nextX = currentX + nx * dist;
+                    const nextY = currentY + ny * dist;
+                    
+                    if (drawing) {
+                        graphics.lineBetween(currentX, currentY, nextX, nextY);
+                    }
+                    
+                    currentX = nextX;
+                    currentY = nextY;
+                    currentDist = dist;
+                }
+            }
+        }
+    }
+
+    // Add a floating animation to make elements look like they're floating on water
+    addFloatingAnimation(gameObject: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle) {
+        // Save the original position
+        const originalY = gameObject.y;
+        
+        // Create a floating animation with random parameters for more natural movement
+        this.tweens.add({
+            targets: gameObject,
+            y: originalY - 8, // Float up by 8 pixels
+            duration: 1500 + Math.random() * 500, // Duration varies slightly
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1, // Infinite loop
+            delay: Math.random() * 1000, // Random delay so they don't all move together
+        });
+        
+        // Optional: add a very slight rotation oscillation for more natural movement
+        this.tweens.add({
+            targets: gameObject,
+            angle: 3, // Very slight rotation
+            duration: 2000 + Math.random() * 1000, // Different duration than y movement
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1,
+            delay: Math.random() * 1000, // Random delay
+        });
     }
 }

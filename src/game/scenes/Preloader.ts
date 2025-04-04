@@ -32,19 +32,13 @@ export class Preloader extends Scene
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
 
-        console.log('Preloader: Loading assets...');
-
+        // Load image assets
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
-        this.load.image('stage1', 'stage 1.png');
-        this.load.image('stage2', 'stage 2.png');
-        this.load.image('stage3', 'stage 3.png');
-        this.load.image('stage4', 'stage 4.png');
-        this.load.image('stage5', 'stage 5.png');
 
         // game 1 assets
         this.load.image('amp-item', 'game1/amp_item.png');
-        this.load.image('nut-item', 'game1/plug_item.png');
+        this.load.image('nut-item', 'game1/nut_item.png');
         this.load.image('spark-item', 'game1/spark_item.png');
         this.load.image('plug-item', 'game1/plug_item.png');
 
@@ -67,6 +61,19 @@ export class Preloader extends Scene
         this.load.video('stage4-video', 'videos/stage4.mp4');
         this.load.video('stage5-video', 'videos/stage5.mp4');
 
+        this.load.image('cap-item', 'game1/cap_item.png');
+        this.load.image('switch-item', 'game1/switch_item.png');
+        this.load.image('tool-item', 'game1/tool_item.png');
+        this.load.image('background_1', 'game1/background_1.png');
+
+        // game 1 icons
+        this.load.image('balo-ic', 'game1/balo_ic.png');
+        this.load.image('guide-ic', 'game1/guide_ic.png');
+        this.load.image('volume-ic', 'game1/volume_ic.png');
+        this.load.image('back-ic', 'game1/back_ic.png');
+
+        this.load.image('idle-player', 'game1/player/idle.png');
+        this.load.image('walk-player', 'game1/player/walk.png');
         // Load audio assets from audio directory
         this.load.setPath('audio');
 
@@ -75,13 +82,20 @@ export class Preloader extends Scene
 
         // Load vocabulary word sounds
         this.load.setPath('audio');
+
+        // Tải các file âm thanh
+        this.load.audio('music', 'music.mp3');
+        this.load.audio('swipe', 'swipe.mp3');
+        this.load.audio('select', 'select.mp3');
+        
         // game 1
         this.load.audio('amp-word-audio', 'game1/words/amp.mp3');
         this.load.audio('nut-word-audio', 'game1/words/nut.mp3');
         this.load.audio('spark-word-audio', 'game1/words/spark.mp3');
         this.load.audio('plug-word-audio', 'game1/words/plug.mp3');
-
-
+        this.load.audio('cap-word-audio', 'game1/words/cap.mp3');
+        this.load.audio('switch-word-audio', 'game1/words/switch.mp3');
+        this.load.audio('tool-word-audio', 'game1/words/tool.mp3');
 
         // load utils sound
         this.load.audio('click', 'utils/click.mp3');
